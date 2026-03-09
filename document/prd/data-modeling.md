@@ -27,19 +27,20 @@
 
 ### 1단계: Supabase 테이블 생성
 - [x] `infra/supabase/schema.sql` (최초 설정용) 생성 및 주석 추가.
-- [ ] `infra/supabase/reset_data.sql` (데이터 초기화용) 생성.
-- [ ] Supabase SQL Editor에서 `schema.sql` 실행하여 테이블 생성.
+- [x] `infra/supabase/reset_data.sql` (데이터 초기화용) 생성.
+- [x] Supabase SQL Editor에서 `schema.sql` 실행하여 테이블 생성 완료.
 
 ### 2단계: TypeScript Entity 정의
-- [ ] `src/entities/expert/model/types.ts` 작성.
-- [ ] `src/entities/feed/model/types.ts` 작성.
-- [ ] `src/entities/insight/model/types.ts` 작성.
+- [x] `src/entities/expert/model/types.ts` 작성 완료.
+- [x] `src/entities/feed/model/types.ts` 작성 완료.
+- [x] `src/entities/insight/model/types.ts` 작성 완료.
 
 ### 3단계: DB 클라이언트 유틸리티 작성
-- [ ] Supabase 클라이언트 라이브러리 설치 (`@supabase/supabase-js`).
-- [ ] `src/shared/api/supabase/client.ts` 초기화.
+- [x] Supabase 클라이언트 라이브러리 설치 (`@supabase/supabase-js`).
+- [x] `src/shared/api/supabase/client.ts` 초기화 완료.
 
 ## 5. 최종 체크리스트 (Validation)
-- [ ] 모든 테이블 이름에 `ts_` 프리픽스가 적용되었는가?
-- [ ] `schema.sql`에 테이블/컬럼 주석이 포함되어 Supabase UI에 노출되는가?
-- [ ] 데이터 초기화 스크립트(`reset_data.sql`)가 외래키 관계를 고려하여 작성되었는가?
+- [x] 모든 테이블 이름에 `ts_` 프리픽스가 적용되었는가?
+- [x] `schema.sql`에 테이블/컬럼 주석이 포함되어 Supabase UI에 노출되는가?
+- [x] 데이터 초기화 스크립트(`reset_data.sql`)가 외래키 관계를 고려하여 작성되었는가?
+- [x] TypeScript 엔티티 타입이 Supabase 테이블 구조와 일치하는가?
