@@ -82,4 +82,31 @@ describe('analyzeFeedsBatch', () => {
 
     await expect(analyzeFeedsBatch(mockFeeds)).rejects.toThrow();
   });
+
+  it('1,000자가 넘는 긴 피드 내용도 정상적으로 처리해야 한다', async () => {
+    const longContent = 'A'.repeat(1200);
+    const longFeeds: Feed[] = [
+      { id: 'long-1', content: longContent, expert_id: 'e1', tweet_id: 't3', published_at: '', raw_data: null, created_at: '' },
+    ];
+
+    const mockResponse = [{
+      feed_id: 'long-1',
+      relevance_score: 50,
+      summary: 'Long content summary',
+      importance: 'Low',
+      category: '기타',
+    }];
+
+    (geminiModel.generateContent as any).mockResolvedValue({
+      response: { text: () => JSON.stringify(mockResponse) },
+    });
+
+    const mockInsert = vi.fn(() => ({ error: null }));
+    (supabase.from as any).mockReturnValue({ insert: mockInsert });
+
+    const result = await analyzeFeedsBatch(longFeeds);
+    
+    expect(result[0].feed_id).toBe('long-1');
+    expect(geminiModel.generateContent).toHaveBeenCalled();
+  });
 });

@@ -17,6 +17,9 @@ export const batchAnalysisResponseSchema = z.array(individualAnalysisSchema);
 
 export type AnalysisResponse = z.infer<typeof individualAnalysisSchema>;
 
+// AI 배치 분석 시 권장되는 피드당 최대 텍스트 길이
+const MAX_CONTENT_LENGTH = 1000;
+
 /**
  * 여러 트윗 피드를 한꺼번에 분석하여 인사이트를 도출하고 DB에 저장합니다. (Batch Processing)
  * Gemini 무료 티어의 RPM 제한을 준수하기 위해 최대 10개 단위로 호출할 것을 권장합니다.
@@ -25,7 +28,14 @@ export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<AnalysisResponse
   if (feeds.length === 0) return [];
 
   const feedContents = feeds
-    .map((f, idx) => `[ID: ${f.id}] [Content: ${f.content}]`)
+    .map((f) => {
+      // 내용이 너무 길면 토큰 절약을 위해 자름
+      const truncatedContent =
+        f.content.length > MAX_CONTENT_LENGTH
+          ? `${f.content.slice(0, MAX_CONTENT_LENGTH)}...`
+          : f.content;
+      return `[ID: ${f.id}] [Content: ${truncatedContent}]`;
+    })
     .join('\n---\n');
 
   const prompt = `
