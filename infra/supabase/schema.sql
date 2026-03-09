@@ -57,7 +57,41 @@ comment on column public.ts_insights.importance is '인사이트의 중요도 (L
 comment on column public.ts_insights.category is '경제 카테고리 분류 (주식, 코인, 부동산, 거시경제 등)';
 comment on column public.ts_insights.created_at is '분석 및 생성 일시';
 
+-- 4. ts_settings (System configurations)
+create table if not exists public.ts_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz default now()
+);
+
+comment on table public.ts_settings is '시스템 전역 설정 정보';
+comment on column public.ts_settings.key is '설정 식별 키 (예: sync_interval)';
+comment on column public.ts_settings.value is '설정 값 (JSON 또는 문자열)';
+
+-- 5. ts_pipeline_logs (Execution history)
+create table if not exists public.ts_pipeline_logs (
+  id uuid primary key default uuid_generate_v4(),
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  status text check (status in ('success', 'error')),
+  collected_count int default 0,
+  analyzed_count int default 0,
+  error_message text,
+  created_at timestamptz default now()
+);
+
+comment on table public.ts_pipeline_logs is '데이터 파이프라인 실행 이력 로그';
+comment on column public.ts_pipeline_logs.status is '실행 결과 상태 (success, error)';
+comment on column public.ts_pipeline_logs.collected_count is '해당 실행 회차에서 수집된 신규 피드 수';
+comment on column public.ts_pipeline_logs.analyzed_count is '해당 실행 회차에서 분석 완료된 인사이트 수';
+
+-- Default Seeds
+insert into public.ts_settings (key, value)
+values ('sync_interval', '0 * * * *')
+on conflict (key) do nothing;
+
 -- Performance Indexes
 create index if not exists idx_ts_experts_last_synced_at on public.ts_experts(last_synced_at);
 create index if not exists idx_ts_feeds_expert_id on public.ts_feeds(expert_id);
 create index if not exists idx_ts_insights_feed_id on public.ts_insights(feed_id);
+create index if not exists idx_ts_pipeline_logs_started_at on public.ts_pipeline_logs(started_at);
