@@ -25,11 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='ko'>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    // dark 클래스를 추가하여 다크모드 고정
+    <html lang="ko" className="dark" style={{ colorScheme: 'dark' }}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         <ReactQueryProvider>
           {children}
-          <Toaster position='top-center' richColors />
+          <Toaster position="top-center" richColors />
         </ReactQueryProvider>
       </body>
     </html>
