@@ -24,8 +24,8 @@
 
 모든 소스코드는 `src/` 폴더 내에 위치하며 다음 계층 구조를 엄격히 따릅니다.
 
-1.  **app/**: Next.js App Router 정의 (레이아웃, 전역 설정)
-2.  **pages/**: 실제 페이지 구성 요소 (데이터 fetching 및 템플릿 조합)
+1.  **app/**: Next.js App Router 정의 (라우팅, 레이아웃, 전역 설정)
+2.  **views/**: 실제 페이지 구성 요소 (FSD의 pages 레이어, Next.js 충돌 방지를 위해 views로 명명)
 3.  **widgets/**: 독립적인 UI 블록 (예: FeedCard, Navigation Bar)
 4.  **features/**: 사용자 상호작용 및 비즈니스 로직 (예: AnalyzeFeed, SubscribeToggle)
 5.  **entities/**: 비즈니스 엔티티 (예: Feed, User, Insight 데이터 타입 및 기본 스토어)
