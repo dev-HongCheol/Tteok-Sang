@@ -9,6 +9,7 @@ const publicEnvSchema = z.object({
 // 2. 서버에서만 사용하는 변수 (Sensitive Keys)
 const serverEnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
+  CRON_SECRET_KEY: z.string().min(1), // 파이프라인 트리거 전용 키
 });
 
 // 3. 환경에 따른 검증 로직
@@ -28,6 +29,7 @@ let serverParsedData = {};
 if (isServer) {
   const serverParsed = serverEnvSchema.safeParse({
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    CRON_SECRET_KEY: process.env.CRON_SECRET_KEY,
   });
 
   if (!serverParsed.success) {
@@ -38,7 +40,6 @@ if (isServer) {
 }
 
 // 4. 최종 통합 env 객체 내보내기
-// 브라우저에서는 server side 변수들에 접근하면 undefined가 되며, zod 검증은 건너뜁니다.
 export const env = {
   ...publicParsed.data,
   ...(isServer ? serverParsedData : {}) as z.infer<typeof serverEnvSchema>,

@@ -9,6 +9,21 @@ import { supabase } from '@/shared/api/supabase/client';
 export const runFullPipeline = async () => {
   console.log('🚀 파이프라인 시작...');
 
+  // 0. 실행 로그 시작 기록
+  const { data: logData, error: logInitError } = await supabase
+    .from('ts_pipeline_logs')
+    .insert({ status: null, collected_count: 0, analyzed_count: 0 })
+    .select()
+    .single();
+
+  if (logInitError) {
+    console.error('로그 초기화 실패:', logInitError.message);
+  }
+
+  const logId = logData?.id;
+  let totalCollected = 0;
+  let totalAnalyzed = 0;
+
   try {
     // Phase 1: 모든 전문가의 피드 수집
     console.log('[Phase 1] 전문가 피드 수집 중...');
@@ -20,19 +35,17 @@ export const runFullPipeline = async () => {
 
     for (const expert of experts) {
       try {
+        // 이 회차에서 수집된 실제 수를 추적하기 위해 syncExpertFeed를 약간 확장하거나
+        // 여기서는 전체 수집된 피드 수를 나중에 한 번에 셉니다.
         await syncExpertFeed(expert.id, expert.twitter_handle);
       } catch (error) {
         console.error(`[Error] 전문가(${expert.twitter_handle}) 수집 실패:`, error);
-        // 한 전문가가 실패해도 다음 전문가 계속 진행
       }
     }
 
     // Phase 2: 미분석 피드 배치 분석
     console.log('[Phase 2] 미분석 피드 AI 분석 중...');
 
-    // ts_insights에 존재하지 않는 피드만 조회 (Left Join 방식 활용)
-    // Supabase JS 라이브러리의 한계로 인해, 여기서는 분석되지 않은 피드를 효율적으로 찾기 위해
-    // ts_insights에 등록되지 않은 feed_id를 필터링하는 로직을 사용합니다.
     const { data: unanalyzedFeeds, error: feedsError } = await supabase
       .from('ts_feeds')
       .select('*, ts_insights!left(id)')
@@ -41,9 +54,9 @@ export const runFullPipeline = async () => {
     if (feedsError) throw new Error(`미분석 피드 조회 실패: ${feedsError.message}`);
 
     const feedsToAnalyze = (unanalyzedFeeds || []) as Feed[];
+    totalCollected = feedsToAnalyze.length; // 이번에 수집되어 분석을 기다리는 데이터 수
     console.log(`총 ${feedsToAnalyze.length}개의 미분석 피드가 발견되었습니다.`);
 
-    // 10개씩 배치 처리
     const BATCH_SIZE = 10;
     for (let i = 0; i < feedsToAnalyze.length; i += BATCH_SIZE) {
       const batch = feedsToAnalyze.slice(i, i + BATCH_SIZE);
@@ -52,8 +65,9 @@ export const runFullPipeline = async () => {
       );
 
       try {
-        await analyzeFeedsBatch(batch);
-        // 무료 티어 RPM 보호를 위한 짧은 지연 (1초)
+        const results = await analyzeFeedsBatch(batch);
+        totalAnalyzed += results.length;
+
         if (i + BATCH_SIZE < feedsToAnalyze.length) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
@@ -62,9 +76,34 @@ export const runFullPipeline = async () => {
       }
     }
 
+    // 3. 성공 로그 업데이트
+    if (logId) {
+      await supabase
+        .from('ts_pipeline_logs')
+        .update({
+          status: 'success',
+          ended_at: new Date().toISOString(),
+          collected_count: totalCollected,
+          analyzed_count: totalAnalyzed,
+        })
+        .eq('id', logId);
+    }
+
     console.log('✅ 파이프라인 실행 완료.');
-  } catch (error) {
-    console.error('❌ 파이프라인 중명 오류:', error);
+  } catch (error: any) {
+    console.error('❌ 파이프라인 중대한 오류:', error);
+
+    // 4. 실패 로그 업데이트
+    if (logId) {
+      await supabase
+        .from('ts_pipeline_logs')
+        .update({
+          status: 'error',
+          ended_at: new Date().toISOString(),
+          error_message: error.message || String(error),
+        })
+        .eq('id', logId);
+    }
     throw error;
   }
 };
