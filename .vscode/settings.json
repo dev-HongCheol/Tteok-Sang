@@ -1,0 +1,36 @@
+{
+  // Biome을 기본 포매터로 설정
+  "editor.defaultFormatter": "biomejs.biome",
+
+  // 저장 시 자동 포맷
+  "editor.formatOnSave": true,
+
+  // 저장 시 자동 액션 (import 정리 등)
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit"
+  },
+
+  // TypeScript/JavaScript 파일에 대해서도 Biome 사용
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  // Headwind - Tailwind CSS 클래스 자동 정렬
+  "headwind.runOnSave": true,
+  "headwind.sortTailwindClasses": true
+}
