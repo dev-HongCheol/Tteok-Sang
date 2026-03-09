@@ -1,3 +1,4 @@
+// pnpm test run src/shared/test/example.test.ts
 import { describe, expect, it } from 'vitest';
 
 describe('Initial Setup Test', () => {
