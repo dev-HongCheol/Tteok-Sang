@@ -14,7 +14,7 @@
 - **State Management/Data Fetching:** Axios, TanStack Query (v5)
 - **Form & Validation:** React Hook Form, Zod
 - **Database/Auth:** Self-hosted Supabase ([https://supa.devhong.cc](https://supa.devhong.cc))
-- **AI Model:** Gemini 2.0 Flash (무료 티어)
+- **AI Model:** Gemini 2.5 Flash (무료 티어)
 - **Architecture:** Feature-Sliced Design (FSD)
 - **Testing:** Vitest, React Testing Library, Playwright (E2E)
 
@@ -67,6 +67,7 @@
 ## 📝 코딩 컨벤션 및 개발 원칙
 
 - **타입 안정성:** 모든 API 요청과 응답, Form 데이터는 Zod 스키마를 통해 검증합니다.
+- **주석 및 문서화:** 모든 `interface`, `type` 정의 시에는 반드시 **JSDoc 스타일(`/** ... */`) 주석**을 추가합니다. 이는 VS Code 등 IDE에서 자동완성 시 속성의 의미를 즉시 파악할 수 있게 하기 위함입니다.
 - **서버 우선:** 데이터 fetching은 가급적 RSC(React Server Components)에서 수행하되, 클라이언트 상태 관리가 필요한 경우 TanStack Query를 사용합니다.
 - **테스트 필수:** 모든 기능 구현은 해당 비즈니스 로직을 검증하는 테스트 코드가 동반되어야 합니다.
 - **테스트 주석 규칙:** 모든 테스트 파일(`.test.ts`, `.spec.ts`)의 최상단 첫 줄에는 해당 테스트를 실행할 수 있는 전체 명령어(예: `// pnpm test src/...`)를 주석으로 반드시 포함합니다.
@@ -76,7 +77,8 @@
 ## 🔒 커밋 및 형상 관리 규칙 (Strict Policy)
 
 1. **자동 커밋 금지:** 어떠한 도구(CLI, 스크립트 등)도 사용자의 명시적 요청 없이 커밋을 생성해서는 안 됩니다.
-2. **커밋 워크플로우:**
+2. **DB 스키마 동기화:** 신규 마이그레이션 파일(`infra/supabase/migration_*.sql`)이 생성되면, 반드시 그 내용을 `infra/supabase/schema.sql`에 반영하여 `schema.sql`이 항상 최신 상태를 유지하도록 해야 한다.
+3. **커밋 워크플로우:**
    - 기능 구현 완료 및 테스트 코드 작성
    - `pnpm test` 등을 통한 테스트 통과 확인
    - 사용자에게 테스트 결과 알림 및 커밋 의사 확인

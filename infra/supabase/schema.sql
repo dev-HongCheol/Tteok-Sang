@@ -1,5 +1,5 @@
 -- Tteok-Sang (떡상) Database Schema
--- Last Updated: 2026-03-09
+-- Last Updated: 2026-03-10
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -43,18 +43,34 @@ create table if not exists public.ts_insights (
   id uuid primary key default uuid_generate_v4(),
   feed_id uuid references public.ts_feeds(id) on delete cascade not null unique,
   relevance_score int check (relevance_score >= 0 and relevance_score <= 100),
-  summary text,
   importance text check (importance in ('Low', 'Medium', 'High')),
-  category text,
+  market_type text check (market_type in ('KR', 'US', 'Global')),
+  mentioned_stocks jsonb default '[]'::jsonb,
+  is_explicit boolean default true,
+  sectors text[] default '{}'::text[],
+  sentiment_direction text check (sentiment_direction in ('Bullish', 'Bearish', 'Neutral')),
+  sentiment_intensity int check (sentiment_intensity >= 1 and sentiment_intensity <= 5),
+  investment_horizon text check (investment_horizon in ('intraday', 'swing', 'long-term')),
+  confidence_level text check (confidence_level in ('low', 'medium', 'high')),
+  logic_type text[] default '{}'::text[],
+  summary_line text,
   created_at timestamptz default now()
 );
 
 comment on table public.ts_insights is 'Gemini AI가 분석한 피드별 경제 인사이트 정보';
 comment on column public.ts_insights.feed_id is '분석 대상 피드 ID (ts_feeds 외래키)';
 comment on column public.ts_insights.relevance_score is '경제/주식 관련성 점수 (0~100)';
-comment on column public.ts_insights.summary is 'AI가 요약한 핵심 내용 (3줄 내외)';
 comment on column public.ts_insights.importance is '인사이트의 중요도 (Low, Medium, High)';
-comment on column public.ts_insights.category is '경제 카테고리 분류 (주식, 코인, 부동산, 거시경제, 방산, 조선 등)';
+comment on column public.ts_insights.market_type is '시장 분류 (KR, US, Global)';
+comment on column public.ts_insights.mentioned_stocks is '언급된 종목 리스트 [{ticker, name_ko}]';
+comment on column public.ts_insights.is_explicit is '종목명 직접 명시 여부';
+comment on column public.ts_insights.sectors is '관련 섹터 리스트 (다중 태그)';
+comment on column public.ts_insights.sentiment_direction is '투자 방향성 (Bullish, Bearish, Neutral)';
+comment on column public.ts_insights.sentiment_intensity is '관점 강도 (1~5)';
+comment on column public.ts_insights.investment_horizon is '투자 시계 (intraday, swing, long-term)';
+comment on column public.ts_insights.confidence_level is 'AI 판단 확신도';
+comment on column public.ts_insights.logic_type is '판단 근거 유형 리스트';
+comment on column public.ts_insights.summary_line is '핵심 논리 1줄 요약';
 comment on column public.ts_insights.created_at is '분석 및 생성 일시';
 
 -- 4. ts_settings (System configurations)
@@ -94,4 +110,6 @@ on conflict (key) do nothing;
 create index if not exists idx_ts_experts_last_synced_at on public.ts_experts(last_synced_at);
 create index if not exists idx_ts_feeds_expert_id on public.ts_feeds(expert_id);
 create index if not exists idx_ts_insights_feed_id on public.ts_insights(feed_id);
+create index if not exists idx_ts_insights_market_type on public.ts_insights(market_type);
+create index if not exists idx_ts_insights_sectors on public.ts_insights using gin(sectors);
 create index if not exists idx_ts_pipeline_logs_started_at on public.ts_pipeline_logs(started_at);
