@@ -4,11 +4,13 @@ export interface SystemSetting {
   updated_at: string;
 }
 
+export type PipelineStatus = '완료' | '수집 오류' | '분석 오류' | '시스템 오류' | '진행중' | 'success' | 'error';
+
 export interface PipelineLog {
   id: string;
   started_at: string;
   ended_at: string | null;
-  status: 'success' | 'error' | null;
+  status: PipelineStatus | null;
   collected_count: number;
   analyzed_count: number;
   error_message: string | null;

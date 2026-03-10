@@ -41,7 +41,7 @@ comment on column public.ts_feeds.created_at is 'DB 저장 일시';
 -- 3. ts_insights (AI analysis results of feeds)
 create table if not exists public.ts_insights (
   id uuid primary key default uuid_generate_v4(),
-  feed_id uuid references public.ts_feeds(id) on delete cascade not null,
+  feed_id uuid references public.ts_feeds(id) on delete cascade not null unique,
   relevance_score int check (relevance_score >= 0 and relevance_score <= 100),
   summary text,
   importance text check (importance in ('Low', 'Medium', 'High')),
@@ -54,7 +54,7 @@ comment on column public.ts_insights.feed_id is '분석 대상 피드 ID (ts_fee
 comment on column public.ts_insights.relevance_score is '경제/주식 관련성 점수 (0~100)';
 comment on column public.ts_insights.summary is 'AI가 요약한 핵심 내용 (3줄 내외)';
 comment on column public.ts_insights.importance is '인사이트의 중요도 (Low, Medium, High)';
-comment on column public.ts_insights.category is '경제 카테고리 분류 (주식, 코인, 부동산, 거시경제 등)';
+comment on column public.ts_insights.category is '경제 카테고리 분류 (주식, 코인, 부동산, 거시경제, 방산, 조선 등)';
 comment on column public.ts_insights.created_at is '분석 및 생성 일시';
 
 -- 4. ts_settings (System configurations)
@@ -73,7 +73,7 @@ create table if not exists public.ts_pipeline_logs (
   id uuid primary key default uuid_generate_v4(),
   started_at timestamptz not null default now(),
   ended_at timestamptz,
-  status text check (status in ('success', 'error')),
+  status text check (status in ('완료', '수집 오류', '분석 오류', '진행중', 'success', 'error')),
   collected_count int default 0,
   analyzed_count int default 0,
   error_message text,
@@ -81,7 +81,7 @@ create table if not exists public.ts_pipeline_logs (
 );
 
 comment on table public.ts_pipeline_logs is '데이터 파이프라인 실행 이력 로그';
-comment on column public.ts_pipeline_logs.status is '실행 결과 상태 (success, error)';
+comment on column public.ts_pipeline_logs.status is '실행 결과 상태 (완료, 수집 오류, 분석 오류, 진행중)';
 comment on column public.ts_pipeline_logs.collected_count is '해당 실행 회차에서 수집된 신규 피드 수';
 comment on column public.ts_pipeline_logs.analyzed_count is '해당 실행 회차에서 분석 완료된 인사이트 수';
 
