@@ -19,18 +19,31 @@
 3.  **`reset_data.sql` (데이터 초기화용):** 테이블 구조는 유지하되, 모든 데이터를 안전하게 삭제(TRUNCATE)하고 초기 시드 데이터를 주입할 때 사용합니다.
 
 ### 3.2 테이블 명세
-- **ts_experts:** 전문가 프로필 및 동기화 시점 관리
-- **ts_feeds:** Nitter 수집 원본 트윗 데이터
-- **ts_insights:** Gemini AI 분석 결과 및 요약
-- **ts_settings:** 시스템 설정 (실행 주기 등)
-- **ts_pipeline_logs:** 파이프라인 실행 결과 로그
+- **ts_experts:** 전문가 프로필 및 동기화 시점 관리.
+- **ts_feeds:** Nitter 수집 원본 트윗 데이터 (tweet_id UNIQUE).
+- **ts_insights:** Gemini AI 분석 결과 및 구조화된 투자 지표 (feed_id UNIQUE - 1:1 관계).
+- **ts_settings:** 시스템 설정 (실행 주기 등).
+- **ts_pipeline_logs:** 파이프라인 실행 결과 로그.
+- **ts_stock_dictionary:** (예정) 추출된 티커와 한글 명칭 매핑 및 캐싱 테이블.
 
-### 3.3 ts_settings (시스템 설정)
+### 3.3 ts_insights (AI 분석 및 투자 지표)
 | 컬럼명 | 타입 | 설명 |
 | :--- | :--- | :--- |
-| key | text | 기본키, 설정 식별자 (예: 'sync_interval') |
-| value | text | 설정 값 |
-| updated_at | timestamptz | 수정일 |
+| id | uuid | 기본키 |
+| feed_id | uuid | 원본 피드 외래키 (Unique) |
+| relevance_score | int | 경제/주식 관련성 점수 (0~100) |
+| importance | text | 인사이트 중요도 (Low, Medium, High) |
+| market_type | text | 시장 분류 (KR, US, Global) |
+| mentioned_stocks | jsonb | 언급된 종목 리스트 `[{ticker, name_ko}]` |
+| is_explicit | boolean | 종목명 직접 명시 여부 |
+| sectors | text[] | 관련 섹터 다중 태그 리스트 |
+| sentiment_direction | text | 투자 방향성 (Bullish, Bearish, Neutral) |
+| sentiment_intensity | int | 관점 강도 (1~5) |
+| investment_horizon | text | 투자 시계 (intraday, swing, long-term) |
+| confidence_level | text | AI 판단 확신도 (low, medium, high) |
+| logic_type | text[] | 판단 근거 유형 리스트 (valuation, momentum 등) |
+| summary_line | text | 핵심 논리 1줄 요약 |
+| created_at | timestamptz | 생성 일시 |
 
 ### 3.4 ts_pipeline_logs (실행 로그)
 | 컬럼명 | 타입 | 설명 |
@@ -38,7 +51,7 @@
 | id | uuid | 기본키 |
 | started_at | timestamptz | 시작 일시 |
 | ended_at | timestamptz | 종료 일시 |
-| status | text | 결과 상태 ('success', 'error') |
+| status | text | 결과 상태 ('완료', '수집 오류', '분석 오류', '진행중', 'success', 'error') |
 | collected_count | int | 수집된 신규 피드 수 |
 | analyzed_count | int | 분석 완료된 인사이트 수 |
 | error_message | text | 에러 발생 시 상세 내용 |

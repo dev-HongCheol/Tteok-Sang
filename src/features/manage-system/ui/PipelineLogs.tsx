@@ -104,7 +104,7 @@ export function PipelineLogs() {
             <Info className='w-4 h-4 text-primary' />
             실행 이력
           </CardTitle>
-          <span className='text-[10px] bg-background px-2 py-0.5 rounded-full border border-border/50 font-medium'>
+          <span className='text-sm bg-background px-2 py-0.5 rounded-full border border-border/50 font-medium'>
             Total {totalCount}
           </span>
         </CardHeader>
@@ -112,9 +112,9 @@ export function PipelineLogs() {
           <Table>
             <TableHeader className='bg-muted/10'>
               <TableRow className='border-b hover:bg-transparent border-border/30'>
-                <TableHead className='w-[110px] text-[10px] py-2 px-4'>일시</TableHead>
-                <TableHead className='text-[10px] py-2'>상태</TableHead>
-                <TableHead className='text-right text-[10px] py-2 px-4'>수집/분석</TableHead>
+                <TableHead className='w-[110px] text-sm py-2 px-4'>일시</TableHead>
+                <TableHead className='text-sm py-2'>상태</TableHead>
+                <TableHead className='text-right text-sm py-2 px-4'>수집/분석</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,11 +123,11 @@ export function PipelineLogs() {
                   key={log.id}
                   className='transition-colors border-b hover:bg-muted/30 border-border/20'
                 >
-                  <TableCell className='text-[10px] font-mono text-muted-foreground py-2 px-4'>
+                  <TableCell className='text-sm font-mono text-muted-foreground py-2 px-4'>
                     {format(new Date(log.started_at), 'MM-dd HH:mm', { locale: ko })}
                   </TableCell>
                   <TableCell className='py-2'>{getStatusBadge(log)}</TableCell>
-                  <TableCell className='text-right text-[10px] font-bold py-2 px-4'>
+                  <TableCell className='text-right text-sm font-bold py-2 px-4'>
                     <span className='text-orange-500'>{log.collected_count}</span>
                     <span className='mx-1 text-muted-foreground'>/</span>
                     <span className='text-emerald-500'>{log.analyzed_count}</span>
@@ -138,7 +138,7 @@ export function PipelineLogs() {
           </Table>
 
           <div className='flex items-center justify-between p-3 border-t bg-muted/5 border-border/30'>
-            <div className='text-[10px] text-muted-foreground'>
+            <div className='text-sm text-muted-foreground'>
               {page + 1} / {totalPages || 1} Page
             </div>
             <div className='flex gap-1'>
@@ -177,7 +177,7 @@ export function PipelineLogs() {
           <div className='flex-1 min-h-0'>
             <ScrollArea className='w-full h-full p-6'>
               <div className='p-4 border rounded-lg bg-muted/50 border-border/50'>
-                <pre className='text-[11px] font-mono whitespace-pre-wrap break-all leading-relaxed text-foreground/80'>
+                <pre className='text-sm font-mono whitespace-pre-wrap break-all leading-relaxed text-foreground/80'>
                   {selectedError}
                 </pre>
               </div>

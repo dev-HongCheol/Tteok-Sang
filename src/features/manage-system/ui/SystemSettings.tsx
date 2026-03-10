@@ -93,7 +93,7 @@ export function SystemSettings() {
         </div>
 
         <div className='pt-3 border-t border-border/30'>
-          <p className='text-[10px] text-muted-foreground flex justify-between'>
+          <p className='text-sm text-muted-foreground flex justify-between'>
             <span>자동 수집 주기</span>
             <span className='font-bold text-foreground'>매 시간 정각</span>
           </p>

@@ -29,35 +29,48 @@ describe('analyzeFeedsBatch', () => {
   });
 
   it('여러 피드를 한꺼번에 분석하고 DB에 배치 저장해야 한다', async () => {
-    // 1. Gemini 응답 모킹 (배열 형태)
     const mockBatchResponse = [
       {
-        feed_id: 'feed-1',
+        batch_index: 0,
         relevance_score: 90,
-        summary: '반도체 호재',
         importance: 'High',
-        category: '반도체',
+        market_type: 'KR',
+        mentioned_stocks: [{ ticker: '005930', name_ko: '삼성전자' }],
+        is_explicit: true,
+        sectors: ['반도체'],
+        sentiment_direction: 'Bullish',
+        sentiment_intensity: 4,
+        investment_horizon: 'swing',
+        confidence_level: 'high',
+        logic_type: ['valuation'],
+        summary_line: '반도체 호재',
       },
       {
-        feed_id: 'feed-2',
+        batch_index: 1,
         relevance_score: 5,
-        summary: '일상',
         importance: 'Low',
-        category: '기타',
+        market_type: 'KR',
+        mentioned_stocks: [],
+        is_explicit: false,
+        sectors: ['기타(분류외)'],
+        sentiment_direction: 'Neutral',
+        sentiment_intensity: 1,
+        investment_horizon: 'intraday',
+        confidence_level: 'medium',
+        logic_type: ['macro'],
+        summary_line: '일상',
       },
     ];
     (geminiModel.generateContent as any).mockResolvedValue({
       response: { text: () => JSON.stringify(mockBatchResponse) },
     });
 
-    // 2. Supabase 모킹
-    const mockInsert = vi.fn(() => ({ error: null }));
+    const mockSelect = vi.fn(() => ({ data: mockBatchResponse.map(b => ({ ...b, feed_id: mockFeeds[b.batch_index].id })), error: null }));
+    const mockInsert = vi.fn(() => ({ select: mockSelect }));
     (supabase.from as any).mockReturnValue({ insert: mockInsert });
 
-    // 3. 배치 분석 실행
     const result = await analyzeFeedsBatch(mockFeeds);
 
-    // 4. 검증
     expect(result.length).toBe(2);
     expect(supabase.from).toHaveBeenCalledWith('ts_insights');
     expect(mockInsert).toHaveBeenCalledWith(
@@ -74,39 +87,59 @@ describe('analyzeFeedsBatch', () => {
     expect(geminiModel.generateContent).not.toHaveBeenCalled();
   });
 
-  it('AI 응답이 JSON 배열 형식이 아니면 에러를 발생시켜야 한다', async () => {
-    // 단일 객체 응답 (배열이 아님)
+  it('AI 응답이 잘못되었을 경우 에러를 던지는 대신 분석불가(Fallback) 처리해야 한다', async () => {
+    // 단일 객체 응답 (배열이 아님) -> Zod 파싱 에러 유도
     (geminiModel.generateContent as any).mockResolvedValue({
-      response: { text: () => JSON.stringify({ feed_id: '1' }) },
+      response: { text: () => JSON.stringify({ batch_index: 1 }) },
     });
 
-    await expect(analyzeFeedsBatch(mockFeeds)).rejects.toThrow();
+    // 폴백 저장 시 1개의 데이터를 반환하도록 모킹 (각 재시도마다 1개씩 총 2개 기대)
+    const mockSelect = vi.fn(() => ({ data: [{}], error: null }));
+    const mockInsert = vi.fn(() => ({ select: mockSelect }));
+    (supabase.from as any).mockReturnValue({ insert: mockInsert });
+
+    const result = await analyzeFeedsBatch(mockFeeds);
+    
+    // 에러를 던지지 않고 2개 결과(Fallback)를 반환해야 함
+    expect(result.length).toBe(2);
+    expect(mockInsert).toHaveBeenCalledTimes(2); // 각 분할된 시도 끝에 실패하여 총 2회 insert 호출
   });
 
-  it('1,000자가 넘는 긴 피드 내용도 정상적으로 처리해야 한다', async () => {
-    const longContent = 'A'.repeat(1200);
+  it('전체 텍스트 길이가 권장 길이를 넘으면 배치를 분할해야 한다', async () => {
+    const longContent = 'A'.repeat(3000); // 2개 합치면 6000자 (> 5000자)
     const longFeeds: Feed[] = [
       { id: 'long-1', content: longContent, expert_id: 'e1', tweet_id: 't3', published_at: '', raw_data: null, created_at: '' },
+      { id: 'long-2', content: longContent, expert_id: 'e1', tweet_id: 't4', published_at: '', raw_data: null, created_at: '' },
     ];
 
-    const mockResponse = [{
-      feed_id: 'long-1',
-      relevance_score: 50,
-      summary: 'Long content summary',
-      importance: 'Low',
-      category: '기타',
-    }];
-
+    // 각 분할된 요청에 대한 응답 설정
     (geminiModel.generateContent as any).mockResolvedValue({
-      response: { text: () => JSON.stringify(mockResponse) },
+      response: { text: () => JSON.stringify([{
+        batch_index: 0,
+        relevance_score: 50,
+        importance: 'Low',
+        market_type: 'KR',
+        mentioned_stocks: [],
+        is_explicit: false,
+        sectors: ['기타(분류외)'],
+        sentiment_direction: 'Neutral',
+        sentiment_intensity: 1,
+        investment_horizon: 'intraday',
+        confidence_level: 'medium',
+        logic_type: ['macro'],
+        summary_line: 'split summary',
+      }]) },
     });
 
-    const mockInsert = vi.fn(() => ({ error: null }));
+    const mockSelect = vi.fn(() => ({ data: [{}], error: null }));
+    const mockInsert = vi.fn(() => ({ select: mockSelect }));
     (supabase.from as any).mockReturnValue({ insert: mockInsert });
 
     const result = await analyzeFeedsBatch(longFeeds);
     
-    expect(result[0].feed_id).toBe('long-1');
-    expect(geminiModel.generateContent).toHaveBeenCalled();
+    expect(result.length).toBe(2);
+    // 2번 각각 호출되어야 함 (분할되었으므로)
+    expect(geminiModel.generateContent).toHaveBeenCalledTimes(2);
+    expect(mockInsert).toHaveBeenCalledTimes(2);
   });
 });

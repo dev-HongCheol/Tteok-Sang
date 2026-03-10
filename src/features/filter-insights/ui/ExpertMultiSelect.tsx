@@ -63,7 +63,7 @@ export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSe
         <button
           type='button'
           onClick={handleToggleAll}
-          className='text-[10px] text-primary hover:underline font-bold'
+          className='text-sm text-primary hover:underline font-bold'
         >
           전체 선택
         </button>
@@ -89,7 +89,7 @@ export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSe
                 />
                 <div className='flex flex-col flex-1 overflow-hidden pointer-events-none'>
                   <span className='text-xs font-bold truncate'>@{expert.twitter_handle}</span>
-                  <span className='text-[10px] text-muted-foreground truncate'>{expert.name}</span>
+                  <span className='text-sm text-muted-foreground truncate'>{expert.name}</span>
                 </div>
               </div>
             );
@@ -98,7 +98,7 @@ export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSe
       </ScrollArea>
 
       {/* 항상 노출되는 선택 계정 수 표시 */}
-      <p className='text-[10px] text-muted-foreground italic text-right'>
+      <p className='text-sm text-muted-foreground italic text-right'>
         {selectedCount}개 계정 선택됨
       </p>
     </div>

@@ -1,32 +1,31 @@
-import type { Feed } from '@/entities/feed/model/types';
-import { analyzeFeedsBatch } from '@/features/analyze-feed/model/analysis-logic';
-import { syncExpertFeed } from '@/features/sync-feed/model/sync-logic';
 import { supabase } from '@/shared/api/supabase/client';
+import { syncExpertFeed } from '@/features/sync-feed/model/sync-logic';
+import { analyzeFeedsBatch } from '@/features/analyze-feed/model/analysis-logic';
+import type { Feed } from '@/entities/feed/model/types';
 
 /**
  * 프로젝트의 전체 수집 및 분석 파이프라인을 실행합니다.
  */
 export const runFullPipeline = async () => {
   console.log('🚀 파이프라인 시작...');
-
-  // 0. 실행 로그 시작 기록
+  
   const { data: logData, error: logInitError } = await supabase
     .from('ts_pipeline_logs')
-    .insert({ status: null, collected_count: 0, analyzed_count: 0 })
+    .insert({ status: '진행중', collected_count: 0, analyzed_count: 0 })
     .select()
     .single();
 
-  if (logInitError) {
-    console.error('로그 초기화 실패:', logInitError.message);
-  }
-
+  if (logInitError) console.error('로그 초기화 실패:', logInitError.message);
+  
   const logId = logData?.id;
-  let totalCollected = 0;
+  let newCollectedThisRun = 0; // 이번 실행에서 새로 수집된 수
   let totalAnalyzed = 0;
+  let hasSyncError = false;
+  let hasAnalysisError = false;
+  let combinedErrorMessage = '';
 
   try {
-    // Phase 1: 모든 전문가의 피드 수집
-    console.log('[Phase 1] 전문가 피드 수집 중...');
+    // Phase 1: 전문가 피드 수집
     const { data: experts, error: expertsError } = await supabase
       .from('ts_experts')
       .select('id, twitter_handle');
@@ -35,74 +34,81 @@ export const runFullPipeline = async () => {
 
     for (const expert of experts) {
       try {
-        // 이 회차에서 수집된 실제 수를 추적하기 위해 syncExpertFeed를 약간 확장하거나
-        // 여기서는 전체 수집된 피드 수를 나중에 한 번에 셉니다.
-        await syncExpertFeed(expert.id, expert.twitter_handle);
-      } catch (error) {
+        const count = await syncExpertFeed(expert.id, expert.twitter_handle);
+        newCollectedThisRun += count;
+      } catch (error: any) {
         console.error(`[Error] 전문가(${expert.twitter_handle}) 수집 실패:`, error);
+        hasSyncError = true;
+        combinedErrorMessage += `[@${expert.twitter_handle} 수집 실패: ${error.message}] `;
       }
+    }
+
+    // [핵심 수정] 이번 회차에 수집된 데이터가 없으면 분석 단계를 건너뜀
+    if (newCollectedThisRun === 0) {
+      console.log('새로 수집된 피드가 없어 분석 단계를 종료합니다.');
+      if (logId) {
+        await supabase.from('ts_pipeline_logs').update({
+          status: hasSyncError ? '수집 오류' : '완료',
+          ended_at: new Date().toISOString(),
+          error_message: combinedErrorMessage || null
+        }).eq('id', logId);
+      }
+      return;
     }
 
     // Phase 2: 미분석 피드 배치 분석
-    console.log('[Phase 2] 미분석 피드 AI 분석 중...');
-
     const { data: unanalyzedFeeds, error: feedsError } = await supabase
       .from('ts_feeds')
-      .select('*, ts_insights!left(id)')
-      .is('ts_insights.id', null);
+      .select('*, ts_insights(id)')
+      .returns<(Feed & { ts_insights: { id: string }[] })[]>();
 
     if (feedsError) throw new Error(`미분석 피드 조회 실패: ${feedsError.message}`);
 
-    const feedsToAnalyze = (unanalyzedFeeds || []) as Feed[];
-    totalCollected = feedsToAnalyze.length; // 이번에 수집되어 분석을 기다리는 데이터 수
-    console.log(`총 ${feedsToAnalyze.length}개의 미분석 피드가 발견되었습니다.`);
-
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < feedsToAnalyze.length; i += BATCH_SIZE) {
-      const batch = feedsToAnalyze.slice(i, i + BATCH_SIZE);
-      console.log(
-        `배치 분석 진행 중 (${i + 1} ~ ${Math.min(i + BATCH_SIZE, feedsToAnalyze.length)})`,
-      );
-
-      try {
-        const results = await analyzeFeedsBatch(batch);
-        totalAnalyzed += results.length;
-
-        if (i + BATCH_SIZE < feedsToAnalyze.length) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+    const feedsToAnalyze = (unanalyzedFeeds || []).filter(f => !f.ts_insights || f.ts_insights.length === 0);
+    
+    if (feedsToAnalyze.length > 0) {
+      console.log(`[Phase 2] 분석 시작 (${feedsToAnalyze.length}개)...`);
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < feedsToAnalyze.length; i += BATCH_SIZE) {
+        const batch = feedsToAnalyze.slice(i, i + BATCH_SIZE);
+        try {
+          const results = await analyzeFeedsBatch(batch);
+          totalAnalyzed += results.length;
+          
+          // API 할당량(RPM) 준수를 위해 배치 간 4초 지연
+          await new Promise(resolve => setTimeout(resolve, 4000));
+        } catch (error: any) {
+          console.error('[Error] AI 배치 분석 실패:', error);
+          hasAnalysisError = true;
+          combinedErrorMessage += `[AI 분석 실패: ${error.message}] `;
         }
-      } catch (error) {
-        console.error('[Error] 배치 분석 실패:', error);
       }
     }
 
-    // 3. 성공 로그 업데이트
+    // 최종 로그 업데이트
     if (logId) {
-      await supabase
-        .from('ts_pipeline_logs')
-        .update({
-          status: 'success',
-          ended_at: new Date().toISOString(),
-          collected_count: totalCollected,
-          analyzed_count: totalAnalyzed,
-        })
-        .eq('id', logId);
+      let finalStatus = '완료';
+      if (hasAnalysisError) finalStatus = '분석 오류';
+      else if (hasSyncError) finalStatus = '수집 오류';
+
+      await supabase.from('ts_pipeline_logs').update({
+        status: finalStatus,
+        ended_at: new Date().toISOString(),
+        collected_count: newCollectedThisRun,
+        analyzed_count: totalAnalyzed,
+        error_message: combinedErrorMessage || null
+      }).eq('id', logId);
     }
 
-    console.log('✅ 파이프라인 실행 완료.');
+    console.log(`✅ 파이프라인 완료. (수집: ${newCollectedThisRun}, 분석: ${totalAnalyzed})`);
   } catch (error: any) {
-    console.error('❌ 파이프라인 중대한 오류:', error);
-
-    // 4. 실패 로그 업데이트
+    console.error('❌ 치명적 오류:', error);
     if (logId) {
-      await supabase
-        .from('ts_pipeline_logs')
-        .update({
-          status: 'error',
-          ended_at: new Date().toISOString(),
-          error_message: error.message || String(error),
-        })
-        .eq('id', logId);
+      await supabase.from('ts_pipeline_logs').update({
+        status: '시스템 오류',
+        ended_at: new Date().toISOString(),
+        error_message: error.message
+      }).eq('id', logId);
     }
     throw error;
   }

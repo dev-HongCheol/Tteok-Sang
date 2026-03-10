@@ -11,7 +11,7 @@
 - **State Management:** Axios, TanStack Query (v5)
 - **Validation:** React Hook Form, Zod
 - **Database/Auth:** Self-hosted Supabase
-- **AI Model:** Gemini 2.0 Flash
+- **AI Model:** Gemini 2.5 Flash
 - **Testing:** Vitest, Playwright
 
 ## 📁 아키텍처 (Feature-Sliced Design)
