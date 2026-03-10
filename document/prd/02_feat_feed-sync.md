@@ -31,20 +31,20 @@
 ## 4. 단계별 구현 로드맵
 
 ### 1단계: 환경 구축 및 유틸리티 작성
-- [ ] `rss-parser` 라이브러리 설치.
-- [ ] `src/shared/lib/rss/parser.ts` 작성 (RSS -> JSON 변환 유틸).
+- [x] `rss-parser` 라이브러리 설치.
+- [x] `src/shared/lib/rss/parser.ts` 작성 (RSS -> JSON 변환 유틸).
 
 ### 2단계: 피드 수집 기능 구현 (Feature)
-- [ ] `src/features/sync-feed/model/sync-logic.ts` 작성.
-- [ ] 전문가별 `last_synced_at` 조회 및 비교 로직 구현.
-- [ ] `ts_feeds` 테이블에 데이터를 저장하는 Supabase 연동 코드 작성.
+- [x] `src/features/sync-feed/model/sync-logic.ts` 작성.
+- [x] 전문가별 `last_synced_at` 조회 및 비교 로직 구현.
+- [x] `ts_feeds` 테이블에 데이터를 저장하는 Supabase 연동 코드 작성.
 
 ### 3단계: 테스트 코드 작성
-- [ ] Mock RSS 데이터를 활용한 수집 중단 조건 테스트 (Vitest).
-- [ ] 실제 Nitter 인스턴스 호출 테스트 (선택 사항).
+- [x] Mock RSS 데이터를 활용한 수집 중단 조건 테스트 (Vitest).
+- [x] 실제 Nitter 인스턴스 호출 테스트 (선택 사항).
 
 ## 5. 최종 체크리스트 (Validation)
-- [ ] 최초 수집 시 지정된 개수(10개) 이상의 데이터를 가져오는가?
-- [ ] 이미 수집된 데이터 지점에 도달했을 때 불필요한 패칭을 멈추는가?
-- [ ] 수집 완료 후 전문가의 `last_synced_at`이 정상적으로 최신화되는가?
-- [ ] 중복된 `tweet_id` 삽입 시 DB 에러 없이 무시(또는 업데이트)되는가?
+- [x] 최초 수집 시 지정된 개수(10개) 이상의 데이터를 가져오는가?
+- [x] 이미 수집된 데이터 지점에 도달했을 때 불필요한 패칭을 멈추는가?
+- [x] 수집 완료 후 전문가의 `last_synced_at`이 정상적으로 최신화되는가?
+- [x] 중복된 `tweet_id` 삽입 시 DB 에러 없이 무시(또는 업데이트)되는가?

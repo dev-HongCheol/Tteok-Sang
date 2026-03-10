@@ -1,29 +1,53 @@
 # 🚀 Tteok-Sang (떡상) - AI 경제 피드 큐레이터
 
-특정 분야 전문가의 인사이트를 수집하고, Gemini AI를 통해 핵심 경제 지표를 추출하여 큐레이션하는 서비스입니다.
+**떡상(Tteok-Sang)**은 흩어져 있는 경제/주식 전문가들의 통찰력을 한곳에 모아, Gemini AI가 실시간으로 분석하고 정량화된 투자 지표(Sentiment Radar)를 제공하는 인텔리전스 큐레이션 서비스입니다.
+
+---
+
+## 🌟 핵심 비전
+> "전문가들의 정성적인 글을 정량적인 데이터로 변환하여 시장의 온도를 1초 만에 파악합니다."
+
+## ✨ 주요 기능
+
+### 1. 전문가 피드 실시간 수집 (Expert Sync)
+- **Nitter RSS 연동:** X(Twitter) API 없이도 전문가 계정의 피드를 실시간으로 증분 수집합니다.
+- **다중 인스턴스 폴백:** 수집 안정성을 위해 여러 Nitter 인스턴스를 관리하고 장애 시 자동으로 전환합니다.
+
+### 2. 고도화된 AI 인사이트 추출 (AI Analysis)
+- **Gemini 2.5 Flash 기반:** 각 피드를 분석하여 관련성 점수, 중요도, 시장 분류(KR/US/Global), 언급된 종목, 투자 방향성(Bullish/Bearish)을 추출합니다.
+- **구조화된 데이터:** AI가 뽑아낸 데이터를 Zod 스키마로 검증하여 데이터 무결성을 보장합니다.
+
+### 3. 실시간 투자 레이더 대시보드 (Dashboard)
+- **3계층 정보 헤더:** 관련성, 중요도, 센티먼트 강도를 대시보드 형태로 시각화하여 정보의 위계를 명확히 전달합니다.
+- **정교한 필터링:** 시장별, 섹터별, 전문가별로 본인이 원하는 투자 정보만 골라볼 수 있습니다.
+
+### 4. 무인 자동화 파이프라인 (Automation)
+- **Supabase Edge Functions & pg_cron:** 별도의 백엔드 서버 없이 클라우드 상에서 매시간 자동으로 수집과 분석이 수행됩니다.
+- **실행 로깅 시스템:** 파이프라인의 모든 단계(수집 수, 분석 수, 오류 내역)를 기록하여 시스템 상태를 관리합니다.
+
+---
 
 ## 🛠️ 기술 스택
 
 - **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
-- **Package Manager:** `pnpm`
-- **UI:** shadcn/ui, Tailwind CSS
-- **State Management:** Axios, TanStack Query (v5)
-- **Validation:** React Hook Form, Zod
-- **Database/Auth:** Self-hosted Supabase
-- **AI Model:** Gemini 2.5 Flash
-- **Testing:** Vitest, Playwright
+- **UI/UX:** Tailwind CSS, shadcn/ui, Lucide Icons
+- **Backend as a Service:** Supabase (Auth, Database, Edge Functions)
+- **AI Intelligence:** Google Gemini API
+- **Architecture:** Feature-Sliced Design (FSD)
+- **Testing & Quality:** Vitest (Unit), Playwright (E2E)
 
 ## 📁 아키텍처 (Feature-Sliced Design)
 
-프로젝트는 **FSD** 아키텍처를 따릅니다. 모든 코드는 `src/` 폴더 내에 위치합니다.
+프로젝트는 유지보수성과 확장성을 위해 **FSD** 계층 구조를 엄격히 따릅니다.
 
-- `app/`: Next.js App Router 설정 및 전역 스타일
-- `pages/`: 페이지 구성 요소
-- `widgets/`: 독립적인 UI 블록 (FeedCard, Navigation 등)
-- `features/`: 사용자 상호작용 및 비즈니스 로직
-- `entities/`: 비즈니스 엔티티 (Feed, User, Insight)
-- `shared/`: 공통 컴포넌트, 유틸리티, API 클라이언트
+- `app/`: 라우팅 및 전역 설정
+- `views/`: 페이지 단위 구성 요소
+- `widgets/`: 독립적인 UI 블록 (InsightCard 등)
+- `features/`: 사용자 인터랙션 및 비즈니스 로직 (SyncPipeline, FeedFilter 등)
+- `entities/`: 비즈니스 데이터 모델 및 타입 (Feed, Expert, Insight 등)
+- `shared/`: 공통 컴포넌트, API 클라이언트, 유틸리티
+
+---
 
 ## 🚀 시작하기
 
@@ -43,13 +67,14 @@ pnpm dev
 
 ### 테스트 실행
 ```bash
-# 단위 테스트 (Vitest)
+# 단위 및 로직 테스트 실행
 pnpm test
 
-# E2E 테스트 (Playwright)
+# E2E 테스트 실행
 npx playwright test
 ```
 
-## 🤖 개발 프로세스
-이 프로젝트는 **PRD(Product Requirements Document)** 기반의 설계를 우선합니다.
-모든 새로운 기능은 `document/prd/` 경로에 명세서 작성 후 구현됩니다.
+---
+
+## 🤖 개발 문화
+이 프로젝트는 **PRD(Product Requirements Document)** 기반의 설계를 원칙으로 합니다. 모든 기능은 `document/prd/`에 상세 명세와 체크리스트를 작성한 후 구현되며, `gemini.md` 가이드를 통해 일관된 스타일과 아키텍처를 유지합니다.
