@@ -11,6 +11,7 @@ export interface InsightWithDetails extends Insight {
 
 export interface GetInsightsParams {
   categories?: string[];
+  importances?: string[];
   expertIds?: string[]; // undefined: 전체, []: 없음, [...]: 특정 ID
   startDate?: string;
   endDate?: string;
@@ -32,7 +33,12 @@ export const getInsights = async (params: GetInsightsParams): Promise<InsightWit
     `)
     .order('created_at', { ascending: false });
 
-  // 1. 카테고리 필터
+  // 1. 중요도 필터
+  if (params.importances && params.importances.length > 0) {
+    query = query.in('importance', params.importances);
+  }
+
+  // 2. 카테고리 필터
   if (params.categories && params.categories.length > 0 && !params.categories.includes('전체')) {
     query = query.in('category', params.categories);
   }

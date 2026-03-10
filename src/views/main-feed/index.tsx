@@ -20,9 +20,11 @@ export default function MainFeedView() {
   // 초기값을 undefined로 설정하여 '전체 선택' 상태로 시작
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[] | undefined>(undefined);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedImportances, setSelectedImportances] = useState<string[]>(['High']);
 
   const queryParams: GetInsightsParams = {
     categories: selectedCategories,
+    importances: selectedImportances,
     expertIds: selectedExpertIds,
     startDate: dateRange?.from?.toISOString(),
     endDate: dateRange?.to?.toISOString(),
@@ -64,6 +66,8 @@ export default function MainFeedView() {
               onDateRangeChange={setDateRange}
               selectedCategories={selectedCategories}
               onCategoriesChange={setSelectedCategories}
+              selectedImportances={selectedImportances}
+              onImportancesChange={setSelectedImportances}
             />
           </aside>
 
