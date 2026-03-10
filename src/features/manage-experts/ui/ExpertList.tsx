@@ -1,3 +1,6 @@
+/**
+ * 등록된 전문가 전체 목록을 조회하여 리스트 형태로 표시하는 컴포넌트입니다.
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +9,10 @@ import { ExpertItem } from './ExpertItem';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Loader2 } from 'lucide-react';
 
+/**
+ * 모든 전문가를 불러와 ExpertItem 컴포넌트의 리스트로 렌더링합니다.
+ * @returns {JSX.Element} 전문가 목록 UI
+ */
 export function ExpertList() {
   const { data: experts, isLoading, isError } = useQuery({
     queryKey: ['experts'],

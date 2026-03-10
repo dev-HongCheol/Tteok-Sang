@@ -1,4 +1,7 @@
 // pnpm test run src/features/analyze-feed/model/analysis-logic.test.ts
+/**
+ * 피드 분석 로직(AI Batch Analysis)에 대한 단위 테스트 모듈입니다.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { analyzeFeedsBatch } from './analysis-logic';
 import { geminiModel } from '@/shared/api/gemini/client';

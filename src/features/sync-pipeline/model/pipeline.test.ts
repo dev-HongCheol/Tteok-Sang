@@ -1,4 +1,7 @@
 // pnpm test run src/features/sync-pipeline/model/pipeline.test.ts
+/**
+ * 전체 동기화 파이프라인(수집-분석 통합 프로세스)에 대한 단위 테스트 모듈입니다.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runFullPipeline } from './pipeline';
 import { supabase } from '@/shared/api/supabase/client';

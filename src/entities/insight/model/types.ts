@@ -1,3 +1,7 @@
+/**
+ * AI 분석 인사이트(Insight) 엔티티와 관련된 데이터 타입을 정의합니다.
+ */
+
 /** 인사이트의 중요도 레벨 */
 export type ImportanceLevel = 'Low' | 'Medium' | 'High';
 

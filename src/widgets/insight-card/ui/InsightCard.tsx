@@ -1,3 +1,6 @@
+/**
+ * 개별 인사이트를 카드 형태로 표시하는 위젯 컴포넌트입니다.
+ */
 'use client';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -24,13 +27,16 @@ import {
   PopoverTrigger,
 } from '@/shared/ui/popover';
 
+/** 인사이트 카드 컴포넌트의 Props 인터페이스 */
 interface InsightCardProps {
   /** 표시할 인사이트 데이터 (원본 피드 및 전문가 정보 포함) */
   insight: InsightWithDetails;
 }
 
 /**
- * 관련성 데이터를 최상단으로 올리고 3계층 헤더 구조를 가진 인사이트 카드
+ * 관련성 데이터를 최상단으로 올리고 3계층 헤더 구조를 가진 인사이트 카드 컴포넌트입니다.
+ * @param {InsightCardProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 인사이트 카드 UI
  */
 export function InsightCard({ insight }: InsightCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);

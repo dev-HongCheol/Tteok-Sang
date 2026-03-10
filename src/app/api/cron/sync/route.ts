@@ -1,9 +1,18 @@
+/**
+ * 크론(Cron) 작업을 통한 데이터 동기화 파이프라인 트리거 API 모듈입니다.
+ */
 import { NextResponse } from 'next/server';
 import { runFullPipeline } from '@/features/sync-pipeline/model/pipeline';
 import { env } from '@/shared/config/env';
 
+/** API 실행 최대 시간 제한 (60초) */
 export const maxDuration = 60; // 실행 시간 제한 연장 (Vercel 등의 환경 고려)
 
+/**
+ * 동기화 파이프라인을 실행하는 POST 핸들러입니다.
+ * @param {Request} request HTTP 요청 객체
+ * @returns {Promise<NextResponse>} 실행 결과 JSON 응답
+ */
 export async function POST(request: Request) {
   const authHeader = request.headers.get('Authorization');
 

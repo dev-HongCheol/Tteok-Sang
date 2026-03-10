@@ -1,3 +1,6 @@
+/**
+ * AI 분석 인사이트(Insight) 엔티티와 관련된 API 요청을 처리하는 모듈입니다.
+ */
 import { supabase } from '@/shared/api/supabase/client';
 import type { Insight, MarketType } from '../model/types';
 import type { Feed } from '@/entities/feed/model/types';
@@ -7,6 +10,7 @@ import type { Expert } from '@/entities/expert/model/types';
 export interface InsightWithDetails extends Insight {
   /** 연결된 원본 피드 및 전문가 정보 */
   ts_feeds: Feed & {
+    /** 피드를 작성한 전문가 정보 */
     ts_experts: Expert;
   };
 }
@@ -31,8 +35,8 @@ export interface GetInsightsParams {
 
 /**
  * 필터 조건에 맞는 인사이트 목록을 상세 정보와 함께 조회합니다.
- * @param params 필터 조건 객체
- * @returns 인사이트 목록 배열
+ * @param {GetInsightsParams} params 필터 조건 객체
+ * @returns {Promise<InsightWithDetails[]>} 상세 정보를 포함한 인사이트 목록 배열
  */
 export const getInsights = async (params: GetInsightsParams): Promise<InsightWithDetails[]> => {
   let query = supabase

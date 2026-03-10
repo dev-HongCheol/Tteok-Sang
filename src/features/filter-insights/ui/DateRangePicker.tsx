@@ -1,3 +1,6 @@
+/**
+ * 사용자가 특정 기간을 선택할 수 있는 캘린더 기반의 기간 선택 컴포넌트입니다.
+ */
 'use client';
 
 import * as React from 'react';
@@ -15,18 +18,27 @@ import {
   PopoverTrigger,
 } from '@/shared/ui/popover';
 
+/** 기간 선택 컴포넌트의 Props 인터페이스 */
 interface DateRangePickerProps {
+  /** 컴포넌트 추가 클래스명 */
   className?: string;
+  /** 현재 선택된 기간 값 */
   value: DateRange | undefined;
+  /** 기간 변경 시 호출되는 핸들러 */
   onChange: (range: DateRange | undefined) => void;
 }
 
+/**
+ * Popover 형태로 제공되는 기간 선택(Date Range) 컴포넌트입니다.
+ * @param {DateRangePickerProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 기간 선택 UI
+ */
 export function DateRangePicker({
   className,
   value,
   onChange,
 }: DateRangePickerProps) {
-  return (
+...
     <div className={cn('grid gap-2', className)}>
       <Popover>
         <PopoverTrigger asChild>

@@ -1,3 +1,6 @@
+/**
+ * 새로운 수집 대상 전문가를 등록하기 위한 폼 컴포넌트입니다.
+ */
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -16,8 +19,12 @@ const expertSchema = z.object({
 
 type ExpertFormValues = z.infer<typeof expertSchema>;
 
+/**
+ * 트위터 ID와 이름을 입력받아 신규 전문가를 등록하는 컴포넌트입니다.
+ * @returns {JSX.Element} 전문가 등록 폼 UI
+ */
 export function AddExpertForm() {
-  const queryClient = useQueryClient();
+...
   const {
     register,
     handleSubmit,

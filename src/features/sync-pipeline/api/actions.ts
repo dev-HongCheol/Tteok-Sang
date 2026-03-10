@@ -1,3 +1,6 @@
+/**
+ * 동기화 파이프라인 및 분석 트리거를 위한 Next.js Server Actions 모듈입니다.
+ */
 'use server';
 
 import type { Feed } from '@/entities/feed/model/types';
@@ -7,6 +10,7 @@ import { runFullPipeline } from '../model/pipeline';
 
 /**
  * 서버 사이드에서 전체 파이프라인(수집+분석)을 실행합니다.
+ * @returns {Promise<{success: boolean, error?: string}>} 실행 성공 여부 및 에러 메시지
  */
 export async function triggerPipelineAction() {
   try {
@@ -20,6 +24,7 @@ export async function triggerPipelineAction() {
 
 /**
  * 수집은 제외하고, 아직 분석되지 않은 피드들만 골라 AI 분석을 수행합니다.
+ * @returns {Promise<{success: boolean, count?: number, error?: string, message?: string}>} 실행 결과 정보
  */
 export async function triggerAnalysisOnlyAction() {
   try {

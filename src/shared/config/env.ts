@@ -1,3 +1,7 @@
+/**
+ * 환경 변수(Environment Variables) 검증 및 관리를 담당하는 모듈입니다.
+ * Zod를 사용하여 런타임에 환경 변수 타입을 강제합니다.
+ */
 import { z } from 'zod';
 
 // 1. 클라이언트와 서버 공용으로 사용하는 변수 (NEXT_PUBLIC_)
@@ -39,7 +43,10 @@ if (isServer) {
   serverParsedData = serverParsed.data;
 }
 
-// 4. 최종 통합 env 객체 내보내기
+/** 
+ * 애플리케이션 전체에서 사용하는 환경 변수 객체 
+ * 서버/클라이언트 환경에 따라 접근 가능한 변수가 다릅니다.
+ */
 export const env = {
   ...publicParsed.data,
   ...(isServer ? serverParsedData : {}) as z.infer<typeof serverEnvSchema>,

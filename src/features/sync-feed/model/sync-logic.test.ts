@@ -1,4 +1,7 @@
 // pnpm test run src/features/sync-feed/model/sync-logic.test.ts
+/**
+ * 피드 동기화 로직(RSS 수집 및 DB 저장)에 대한 단위 테스트 모듈입니다.
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { supabase } from '@/shared/api/supabase/client';
 import { parseRssFeed } from '@/shared/lib/rss/parser';

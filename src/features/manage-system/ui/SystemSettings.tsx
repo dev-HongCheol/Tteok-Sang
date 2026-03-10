@@ -1,3 +1,6 @@
+/**
+ * 시스템 전체 제어 및 설정 상태를 관리하는 컴포넌트입니다.
+ */
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,8 +13,12 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 
+/**
+ * 수동 파이프라인 실행 버튼과 시스템 상태 정보를 제공하는 컴포넌트입니다.
+ * @returns {JSX.Element} 시스템 설정 및 제어 UI
+ */
 export function SystemSettings() {
-  const queryClient = useQueryClient();
+...
   const [isProcessing, setIsProcessing] = useState(false);
 
   // 1. 전체 파이프라인 수동 실행 (수집 + 분석)
