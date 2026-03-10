@@ -1,136 +1,180 @@
 import { z } from 'zod';
 import type { Feed } from '@/entities/feed/model/types';
+import type { CreateInsight, Insight } from '@/entities/insight/model/types';
 import { geminiModel } from '@/shared/api/gemini/client';
 import { supabase } from '@/shared/api/supabase/client';
 
-/** AI가 추출한 개별 종목 정보 스키마 */
-const mentionedStockSchema = z.object({
-  /** 종목 티커 (예: NVDA, 005930) */
+/** AI 분석을 위한 개별 종목 정보 스키마 (DTO) */
+const aiMentionedStockSchema = z.object({
   ticker: z.string().describe('종목 티커 (예: NVDA, 005930)'),
-  /** 공식 한글 종목명 (예: 엔비디아, 삼성전자) */
   name_ko: z.string().describe('공식 한글 종목명 (예: 엔비디아, 삼성전자)'),
 });
 
-/** AI가 분석한 개별 피드 인사이트 구조 스키마 */
-const individualAnalysisSchema = z.object({
-  /** 원본 피드 고유 ID */
-  feed_id: z.string(),
-  /** 경제/주식 관련성 점수 (0~100) */
+/** AI 분석 응답용 개별 아이템 스키마 (DTO) */
+const aiAnalysisItemSchema = z.object({
+  /** 피드 배열에서의 인덱스 번호 (중요: ID가 아님) */
+  batch_index: z.number(),
   relevance_score: z.number().min(0).max(100),
-  /** 인사이트 중요도 */
   importance: z.enum(['Low', 'Medium', 'High']),
-  /** 대상 시장 분류 (한국, 미국, 글로벌) */
   market_type: z.enum(['KR', 'US', 'Global']),
-  /** 언급된 종목 리스트 */
-  mentioned_stocks: z.array(mentionedStockSchema).nullable(),
-  /** 종목명 직접 명시 여부 */
+  mentioned_stocks: z.array(aiMentionedStockSchema).nullable(),
   is_explicit: z.boolean(),
-  /** 관련 섹터 태그 리스트 */
   sectors: z.array(z.string()),
-  /** 투자 방향성 (Bullish, Bearish, Neutral) */
   sentiment_direction: z.enum(['Bullish', 'Bearish', 'Neutral']),
-  /** 관점의 강도 (1~5) */
   sentiment_intensity: z.number().min(1).max(5),
-  /** 투자 시계/호흡 */
   investment_horizon: z.enum(['intraday', 'swing', 'long-term']),
-  /** AI 판단 확신도 */
   confidence_level: z.enum(['low', 'medium', 'high']),
-  /** 판단 근거 유형 리스트 */
   logic_type: z.array(z.string()),
-  /** 핵심 논리 1줄 요약 */
   summary_line: z.string().nullable(),
 });
 
-/** 배치 분석 응답 데이터 스키마 */
-export const batchAnalysisResponseSchema = z.array(individualAnalysisSchema);
+/** 배치 분석 응답 데이터 스키마 (DTO List) */
+const aiAnalysisBatchResponseSchema = z.array(aiAnalysisItemSchema);
 
-/** AI 분석 응답 타입 */
-export type AnalysisResponse = z.infer<typeof individualAnalysisSchema>;
+/** AI 분석 응답 DTO 타입 */
+type AIAnalysisDTO = z.infer<typeof aiAnalysisItemSchema>;
 
 const MAX_CONTENT_LENGTH = 1000;
+const RECOMMENDED_BATCH_TEXT_LENGTH = 5000;
 
-/** 분석 가능한 섹터 전체 리스트 */
 const SECTOR_LIST = [
   '거시경제', '정책/정치', '인공지능', '반도체', '2차전지', '빅테크', 
-  '자동차', '에너지/원자재', '로봇', '바이오', '증권/금융', '소비재/유통', 
-  '부동산', '코인', '공시/실적', '방산', '조선', '기타(분류외)', '분석불가(비관련)'
+  '자동차', '에너지/원자재', '로봇', '바이오', '증권/금융', 
+  '소비재/유통', '부동산', '코인', '공시/실적', '방산', '조선', 
+  '기타(분류외)', '분석불가(비관련)',
 ];
 
 /**
- * 여러 트윗 피드를 한꺼번에 분석하여 인사이트를 도출하고 DB에 저장합니다.
- * @param feeds 분석 대상 피드 배열
- * @returns AI 분석 결과 배열
+ * 분석 실패 시 DB에 저장할 기본값 생성
  */
-export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<AnalysisResponse[]> => {
+const createFallbackInsight = (feedId: string, reason: string): CreateInsight => ({
+  feed_id: feedId,
+  relevance_score: 0,
+  importance: 'Low',
+  market_type: 'Global',
+  mentioned_stocks: [],
+  is_explicit: false,
+  sectors: ['분석불가(비관련)'],
+  sentiment_direction: 'Neutral',
+  sentiment_intensity: 1,
+  investment_horizon: 'intraday',
+  confidence_level: 'low',
+  logic_type: ['system'],
+  summary_line: `분석불가: ${reason}`,
+});
+
+/**
+ * 여러 피드를 한꺼번에 AI로 분석하고 결과를 DB에 저장합니다.
+ * @param feeds 분석 대상 피드 리스트
+ * @returns 저장된 인사이트 데이터 리스트
+ */
+export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<Insight[]> => {
   if (feeds.length === 0) return [];
 
+  const totalLength = feeds.reduce((acc, f) => acc + f.content.length, 0);
+
+  // 1. 배치 분할 로직 (텍스트가 너무 길면 나눠서 재귀 호출)
+  if (totalLength > RECOMMENDED_BATCH_TEXT_LENGTH && feeds.length > 1) {
+    console.warn(`[Batch Split] Total length ${totalLength} chars. Splitting batch.`);
+    const mid = Math.ceil(feeds.length / 2);
+    const results = await Promise.all([
+      analyzeFeedsBatch(feeds.slice(0, mid)),
+      analyzeFeedsBatch(feeds.slice(mid)),
+    ]);
+    return results.flat();
+  }
+
+  // 2. 단일 피드가 너무 긴 경우 즉시 폴백 처리
+  if (feeds.length === 1 && feeds[0].content.length > RECOMMENDED_BATCH_TEXT_LENGTH) {
+    const fallback = createFallbackInsight(feeds[0].id, '텍스트 길이 초과');
+    const { data, error } = await supabase.from('ts_insights').insert(fallback).select();
+    if (error) console.error('Fallback save failed:', error);
+    return data || [];
+  }
+
+  // 3. AI 프롬프트 구성
   const feedContents = feeds
-    .map((f) => {
-      const truncatedContent =
-        f.content.length > MAX_CONTENT_LENGTH
-          ? `${f.content.slice(0, MAX_CONTENT_LENGTH)}...`
-          : f.content;
-      return `[ID: ${f.id}] [Content: ${truncatedContent}]`;
+    .map((f, i) => {
+      const content = f.content.length > MAX_CONTENT_LENGTH 
+        ? `${f.content.slice(0, MAX_CONTENT_LENGTH)}...` 
+        : f.content;
+      return `[Index: ${i}] [Content: ${content}]`;
     })
     .join('\n---\n');
 
   const prompt = `
-    당신은 숙련된 금융 전문가이자 데이터 구조화 전문가입니다. 
-    제공되는 ${feeds.length}개의 트윗 리스트를 분석하여 각각의 투자 가치를 정밀하게 구조화하세요.
+    당신은 숙련된 금융 전문가입니다. 
+    제공되는 ${feeds.length}개의 텍스트를 분석하여 각각의 투자 가치를 구조화하세요.
 
-    [트윗 리스트]
+    [텍스트 리스트]
     ${feedContents}
 
-    [분석 및 추출 가이드라인]
-    1. 각 트윗에 대해 다음 정보를 정확히 추출하세요:
-       - feed_id: 각 트윗의 [ID: ...]에 명시된 ID를 정확히 응답에 포함하세요.
-       - relevance_score: 투자 정보로서의 가치 (0~100). (단순 일상은 0~20점)
-       - market_type: 'KR'(한국), 'US'(미국), 'Global'(공통/기타) 중 선택.
-       - mentioned_stocks: 언급되거나 확실히 추론되는 기업의 [{ticker, name_ko}] 리스트. 없으면 빈 배열.
-       - is_explicit: 기업명이 본문에 직접 명시되었으면 true, 맥락상 추론이면 false.
-       - sectors: 관련 섹터를 다음 리스트에서 1개 이상 선택: [${SECTOR_LIST.join(', ')}].
-       - sentiment_direction: 투자 관점의 방향성 ('Bullish', 'Bearish', 'Neutral').
-       - sentiment_intensity: 관점의 강도 (1: 매우 약함 ~ 5: 매우 강함).
-       - investment_horizon: 권장 투자 기간 ('intraday', 'swing', 'long-term').
-       - confidence_level: AI인 당신의 판단 확신도 ('low', 'medium', 'high').
-       - logic_type: 판단 근거 유형 (예: valuation, momentum, macro, earnings, rumor 등).
-       - summary_line: 핵심 논리를 담은 정교한 1줄 요약.
-    
-    2. '분석불가(비관련)' 섹터 기준: 투자와 무관한 일상, 광고, 스팸 등은 relevance_score를 낮게 주고 섹터에 '분석불가(비관련)'를 포함하세요.
-    3. 반드시 모든 트윗에 대해 분석 결과를 포함한 JSON 배열 형태로만 응답하세요.
+    [응답 가이드라인]
+    각 아이템에 대해 다음 필드를 포함한 JSON 배열을 반환하세요:
+    - batch_index: 위 리스트에서 명시된 [Index: ...]의 숫자.
+    - relevance_score: 관련성 점수 (0~100).
+    - importance: 'Low', 'Medium', 'High' 중 하나.
+    - market_type: 'KR', 'US', 'Global' 중 하나.
+    - mentioned_stocks: [{ticker: "...", name_ko: "..."}] 형식의 배열. 없으면 [].
+    - is_explicit: 기업명 명시 여부 (true/false).
+    - sectors: [${SECTOR_LIST.join(', ')}] 중 선택하여 배열로.
+    - sentiment_direction: 'Bullish', 'Bearish', 'Neutral' 중 하나.
+    - sentiment_intensity: 강도 (1~5).
+    - investment_horizon: 'intraday', 'swing', 'long-term' 중 하나.
+    - confidence_level: 'low', 'medium', 'high' 중 하나.
+    - logic_type: 판단 근거 태그 배열 (예: ["valuation", "macro"]).
+    - summary_line: 1줄 요약.
+
+    JSON 외의 텍스트는 포함하지 마세요.
   `;
 
   try {
     const result = await geminiModel.generateContent(prompt);
     const responseText = result.response.text();
-
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    const cleanJson = jsonMatch ? jsonMatch[0] : responseText;
+    const aiData: AIAnalysisDTO[] = aiAnalysisBatchResponseSchema.parse(JSON.parse(jsonMatch ? jsonMatch[0] : responseText));
 
-    const jsonResponse = JSON.parse(cleanJson);
-    const validatedBatchData = batchAnalysisResponseSchema.parse(jsonResponse);
+    // AI DTO -> DB Entity Mapping
+    const insightsToInsert: CreateInsight[] = aiData.map((item) => {
+      const originalFeed = feeds[item.batch_index];
+      if (!originalFeed) throw new Error(`Invalid batch_index returned: ${item.batch_index}`);
 
-    const insightsToInsert = validatedBatchData.map((data) => ({
-      feed_id: data.feed_id,
-      relevance_score: data.relevance_score,
-      importance: data.importance,
-      market_type: data.market_type,
-      mentioned_stocks: data.mentioned_stocks,
-      is_explicit: data.is_explicit,
-      sectors: data.sectors,
-      sentiment_direction: data.sentiment_direction,
-      sentiment_intensity: data.sentiment_intensity,
-      investment_horizon: data.investment_horizon,
-      confidence_level: data.confidence_level,
-      logic_type: data.logic_type,
-      summary_line: data.summary_line,
-    }));
+      return {
+        feed_id: originalFeed.id,
+        relevance_score: item.relevance_score,
+        importance: item.importance,
+        market_type: item.market_type,
+        mentioned_stocks: item.mentioned_stocks,
+        is_explicit: item.is_explicit,
+        sectors: item.sectors,
+        sentiment_direction: item.sentiment_direction,
+        sentiment_intensity: item.sentiment_intensity,
+        investment_horizon: item.investment_horizon,
+        confidence_level: item.confidence_level,
+        logic_type: item.logic_type,
+        summary_line: item.summary_line,
+      };
+    });
 
-    const { error: insertError } = await supabase.from('ts_insights').insert(insightsToInsert);
-    if (insertError) throw new Error(`DB 저장 실패: ${insertError.message}`);
+    const { data, error } = await supabase.from('ts_insights').insert(insightsToInsert).select();
+    if (error) throw new Error(`DB 저장 실패: ${error.message}`);
+    
+    return data || [];
 
-    return validatedBatchData;
   } catch (error: any) {
-    throw error;
+    // 분석 실패 시 재시도 또는 폴백
+    if (feeds.length > 1) {
+      console.warn(`[Batch Failure] Retrying split: ${error.message}`);
+      const mid = Math.floor(feeds.length / 2);
+      const results = await Promise.all([
+        analyzeFeedsBatch(feeds.slice(0, mid)),
+        new Promise(r => setTimeout(r, 2000)).then(() => analyzeFeedsBatch(feeds.slice(mid))),
+      ]);
+      return results.flat();
+    }
+
+    const fallback = createFallbackInsight(feeds[0].id, error.message || 'Unknown error');
+    const { data } = await supabase.from('ts_insights').insert(fallback).select();
+    return data || [];
   }
 };

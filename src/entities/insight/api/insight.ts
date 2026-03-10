@@ -1,25 +1,38 @@
 import { supabase } from '@/shared/api/supabase/client';
-import type { Insight } from '../model/types';
+import type { Insight, MarketType } from '../model/types';
 import type { Feed } from '@/entities/feed/model/types';
 import type { Expert } from '@/entities/expert/model/types';
 
+/** 전문가 정보와 피드 원본을 포함한 인사이트 확장 타입 */
 export interface InsightWithDetails extends Insight {
+  /** 연결된 원본 피드 및 전문가 정보 */
   ts_feeds: Feed & {
     ts_experts: Expert;
   };
 }
 
+/** 인사이트 목록 조회를 위한 필터 파라미터 */
 export interface GetInsightsParams {
-  categories?: string[];
+  /** 대상 섹터 리스트 (배열 포함 여부로 필터링) */
+  sectors?: string[];
+  /** 중요도 리스트 (Low, Medium, High) */
   importances?: string[];
-  expertIds?: string[]; // undefined: 전체, []: 없음, [...]: 특정 ID
+  /** 시장 분류 리스트 (KR, US, Global) */
+  marketTypes?: MarketType[];
+  /** 특정 전문가 ID 리스트 (undefined: 전체) */
+  expertIds?: string[];
+  /** 조회 시작 일시 (ISO string) */
   startDate?: string;
+  /** 조회 종료 일시 (ISO string) */
   endDate?: string;
+  /** 검색 키워드 (요약 및 본문 대상) */
   searchQuery?: string;
 }
 
 /**
- * 필터 조건에 맞는 인사이트 목록을 조회합니다.
+ * 필터 조건에 맞는 인사이트 목록을 상세 정보와 함께 조회합니다.
+ * @param params 필터 조건 객체
+ * @returns 인사이트 목록 배열
  */
 export const getInsights = async (params: GetInsightsParams): Promise<InsightWithDetails[]> => {
   let query = supabase
@@ -38,23 +51,27 @@ export const getInsights = async (params: GetInsightsParams): Promise<InsightWit
     query = query.in('importance', params.importances);
   }
 
-  // 2. 카테고리 필터
-  if (params.categories && params.categories.length > 0 && !params.categories.includes('전체')) {
-    query = query.in('category', params.categories);
+  // 2. 시장 분류 필터
+  if (params.marketTypes && params.marketTypes.length > 0) {
+    query = query.in('market_type', params.marketTypes);
   }
 
-  // 2. 분석 계정(전문가) 필터
+  // 3. 섹터 필터 (PostgreSQL text[] containment 사용)
+  if (params.sectors && params.sectors.length > 0 && !params.sectors.includes('전체')) {
+    query = query.overlaps('sectors', params.sectors);
+  }
+
+  // 4. 분석 계정(전문가) 필터
   if (params.expertIds !== undefined) {
     if (params.expertIds.length === 0) {
-      // 명시적으로 아무것도 선택하지 않은 경우 -> 결과 없음 처리
-      // 존재할 수 없는 UUID를 넣어 빈 결과를 유도합니다.
+      // 명시적으로 아무것도 선택하지 않은 경우 -> 존재할 수 없는 ID로 빈 결과 유도
       query = query.eq('ts_feeds.expert_id', '00000000-0000-0000-0000-000000000000');
     } else {
       query = query.in('ts_feeds.expert_id', params.expertIds);
     }
   }
 
-  // 3. 기간 필터
+  // 5. 기간 필터
   if (params.startDate) {
     query = query.gte('ts_feeds.published_at', params.startDate);
   }
@@ -62,9 +79,9 @@ export const getInsights = async (params: GetInsightsParams): Promise<InsightWit
     query = query.lte('ts_feeds.published_at', params.endDate);
   }
 
-  // 4. 검색어 필터
+  // 6. 검색어 필터 (summary_line 및 원문 내용 대상)
   if (params.searchQuery) {
-    query = query.or(`summary.ilike.%${params.searchQuery}%,ts_feeds.content.ilike.%${params.searchQuery}%`);
+    query = query.or(`summary_line.ilike.%${params.searchQuery}%,ts_feeds.content.ilike.%${params.searchQuery}%`);
   }
 
   const { data, error } = await query;

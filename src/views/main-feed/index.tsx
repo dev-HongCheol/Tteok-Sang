@@ -9,7 +9,12 @@ import type { DateRange } from 'react-day-picker';
 import { type GetInsightsParams, getInsights } from '@/entities/insight/api/insight';
 import { FeedFilter } from '@/features/filter-insights/ui/FeedFilter';
 import { InsightCard } from '@/widgets/insight-card/ui/InsightCard';
+import type { MarketType } from '@/entities/insight/model/types';
 
+/**
+ * 메인 피드 대시보드 뷰
+ * 고도화된 AI 분석 인사이트를 필터링하여 실시간으로 확인합니다.
+ */
 export default function MainFeedView() {
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -18,20 +23,23 @@ export default function MainFeedView() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  // 초기값을 undefined로 설정하여 '전체 선택' 상태로 시작
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[] | undefined>(undefined);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedImportances, setSelectedImportances] = useState<string[]>(['High']);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedImportances, setSelectedImportances] = useState<string[]>(['High', 'Medium']);
+  const [selectedMarkets, setSelectedMarkets] = useState<MarketType[]>([]);
 
+  /** API 요청 파라미터 구성 */
   const queryParams: GetInsightsParams = {
-    categories: selectedCategories,
+    sectors: selectedSectors,
     importances: selectedImportances,
+    marketTypes: selectedMarkets,
     expertIds: selectedExpertIds,
     startDate: dateRange?.from?.toISOString(),
     endDate: dateRange?.to?.toISOString(),
     searchQuery,
   };
 
+  /** 인사이트 데이터 페칭 (TanStack Query) */
   const {
     data: insights,
     isLoading,
@@ -55,15 +63,16 @@ export default function MainFeedView() {
               </h1>
             </div>
             <p className='text-muted-foreground text-lg font-medium flex justify-between items-center gap-3'>
-              <span>전문가 인사이트 실시간 AI 요약 피드</span>
+              <span>실시간 투자 센티먼트 레이더</span>
               <Link href={'/admin/experts'} title='설정페이지 이동'>
-                <Settings className='size-5' />
+                <Settings className='size-5 hover:rotate-90 transition-transform duration-300' />
               </Link>
             </p>
           </div>
         </header>
 
         <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
+          {/* 사이드바 필터 */}
           <aside className='lg:col-span-1'>
             <FeedFilter
               searchQuery={searchQuery}
@@ -72,18 +81,21 @@ export default function MainFeedView() {
               onExpertsChange={setSelectedExpertIds}
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
-              selectedCategories={selectedCategories}
-              onCategoriesChange={setSelectedCategories}
+              selectedSectors={selectedSectors}
+              onSectorsChange={setSelectedSectors}
               selectedImportances={selectedImportances}
               onImportancesChange={setSelectedImportances}
+              selectedMarkets={selectedMarkets}
+              onMarketsChange={setSelectedMarkets}
             />
           </aside>
 
+          {/* 메인 인사이트 목록 */}
           <main className='lg:col-span-3'>
             {isLoading ? (
               <div className='flex flex-col items-center justify-center py-32 space-y-4'>
                 <Loader2 className='h-12 w-12 animate-spin text-primary/60' />
-                <p className='text-muted-foreground font-medium animate-pulse'>데이터 분석 중...</p>
+                <p className='text-muted-foreground font-bold animate-pulse'>데이터 분석 중...</p>
               </div>
             ) : isError ? (
               <div className='text-center py-20 bg-destructive/5 rounded-2xl border border-destructive/20'>
@@ -96,11 +108,11 @@ export default function MainFeedView() {
                   표시할 인사이트가 없습니다.
                 </p>
                 <p className='text-muted-foreground/60 mt-2 font-medium text-lg'>
-                  필터 조건을 변경하거나 내일 다시 확인해 보세요!
+                  필터 조건을 변경하거나 새로운 피드가 수집될 때까지 기다려 주세요.
                 </p>
               </div>
             ) : (
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
                 {insights.map((insight) => (
                   <InsightCard key={insight.id} insight={insight} />
                 ))}
