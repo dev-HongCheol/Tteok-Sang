@@ -1,3 +1,6 @@
+/**
+ * 전문가(분석 계정) 목록을 다중 선택할 수 있는 필터 컴포넌트입니다.
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
@@ -7,13 +10,21 @@ import { Checkbox } from '@/shared/ui/checkbox';
 import { Label } from '@/shared/ui/label';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 
+/** 전문가 다중 선택 컴포넌트의 Props 인터페이스 */
 interface ExpertMultiSelectProps {
+  /** 현재 선택된 전문가 ID 목록 (undefined일 경우 전체 선택 상태) */
   selectedExpertIds: string[] | undefined;
+  /** 선택 변경 시 호출되는 핸들러 */
   onChange: (ids: string[] | undefined) => void;
 }
 
+/**
+ * 체크박스 리스트 형태로 제공되는 전문가 다중 선택 컴포넌트입니다.
+ * @param {ExpertMultiSelectProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 전문가 선택 리스트 UI
+ */
 export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSelectProps) {
-  const { data: experts, isLoading } = useQuery({
+...
     queryKey: ['experts'],
     queryFn: getExperts,
   });

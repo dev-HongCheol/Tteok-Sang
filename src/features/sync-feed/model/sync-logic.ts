@@ -1,8 +1,14 @@
+/**
+ * 전문가의 트위터 RSS 피드를 수집하고 데이터베이스에 동기화하는 비즈니스 로직 모듈입니다.
+ */
 import { supabase } from '@/shared/api/supabase/client';
 import { parseRssFeed } from '@/shared/lib/rss/parser';
 
 /**
  * 전문가의 피드를 동기화하고 수집된 신규 피드 개수를 반환합니다.
+ * @param {string} expertId 전문가 고유 ID
+ * @param {string} twitterHandle 전문가의 트위터 핸들
+ * @returns {Promise<number>} 수집된 신규 피드 개수
  */
 export const syncExpertFeed = async (expertId: string, twitterHandle: string): Promise<number> => {
   const { data: expert, error: expertError } = await supabase

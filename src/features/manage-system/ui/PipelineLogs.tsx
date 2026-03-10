@@ -1,3 +1,6 @@
+/**
+ * 시스템 동기화 파이프라인의 실행 이력을 테이블 형태로 표시하는 컴포넌트입니다.
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
@@ -16,8 +19,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const PAGE_SIZE = 10;
 
+/**
+ * 파이프라인 실행 로그 목록을 페이징 처리하여 보여주며, 에러 발생 시 상세 로그 확인 기능을 제공합니다.
+ * @returns {JSX.Element} 파이프라인 로그 목록 UI
+ */
 export function PipelineLogs() {
-  const [page, setPage] = useState(0);
+...
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({

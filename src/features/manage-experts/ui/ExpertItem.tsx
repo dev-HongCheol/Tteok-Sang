@@ -1,3 +1,6 @@
+/**
+ * 전문가 목록에서 개별 전문가 정보를 표시하고 관리(수정, 삭제)하는 아이템 컴포넌트입니다.
+ */
 'use client';
 
 import { useState } from 'react';
@@ -9,12 +12,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Twitter, Edit2, Trash2, Check, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
+/** 전문가 아이템 컴포넌트의 Props 인터페이스 */
 interface ExpertItemProps {
+  /** 표시할 전문가 데이터 */
   expert: Expert;
 }
 
+/**
+ * 전문가 정보(이름, 핸들)를 표시하고 인라인 수정 및 삭제 기능을 제공하는 컴포넌트입니다.
+ * @param {ExpertItemProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 전문가 아이템 UI
+ */
 export function ExpertItem({ expert }: ExpertItemProps) {
-  const queryClient = useQueryClient();
+...
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(expert.name);
 

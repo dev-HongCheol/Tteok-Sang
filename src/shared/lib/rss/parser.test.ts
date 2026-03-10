@@ -1,4 +1,7 @@
 // pnpm test run src/shared/lib/rss/parser.test.ts
+/**
+ * RSS 파서(Parser) 유틸리티에 대한 통합 테스트 모듈입니다.
+ */
 import { describe, it, expect } from 'vitest';
 import { parseRssFeed } from './parser';
 

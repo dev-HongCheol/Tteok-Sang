@@ -1,3 +1,6 @@
+/**
+ * 인사이트 목록을 필터링하기 위한 사이드바 필터 컴포넌트입니다.
+ */
 'use client';
 
 import { Search, X } from 'lucide-react';
@@ -11,26 +14,41 @@ import { Label } from '@/shared/ui/label';
 import { DateRangePicker } from './DateRangePicker';
 import { ExpertMultiSelect } from './ExpertMultiSelect';
 
+/** 피드 필터 컴포넌트의 Props 인터페이스 */
 interface FeedFilterProps {
+  /** 검색 키워드 */
   searchQuery: string;
+  /** 검색어 변경 핸들러 */
   onSearchChange: (query: string) => void;
+  /** 선택된 전문가 ID 목록 */
   selectedExpertIds: string[] | undefined;
+  /** 전문가 선택 변경 핸들러 */
   onExpertsChange: (ids: string[] | undefined) => void;
+  /** 선택된 기간 범위 */
   dateRange: DateRange | undefined;
+  /** 기간 변경 핸들러 */
   onDateRangeChange: (range: DateRange | undefined) => void;
+  /** 선택된 섹터 목록 */
   selectedSectors: string[];
+  /** 섹터 선택 변경 핸들러 */
   onSectorsChange: (sectors: string[]) => void;
+  /** 선택된 중요도 목록 */
   selectedImportances: string[];
+  /** 중요도 선택 변경 핸들러 */
   onImportancesChange: (importances: string[]) => void;
+  /** 선택된 시장 분류 목록 */
   selectedMarkets: MarketType[];
+  /** 시장 분류 선택 변경 핸들러 */
   onMarketsChange: (markets: MarketType[]) => void;
 }
-
-/** PRD 정의 섹터 리스트 */
-const SECTORS = [
-  '거시경제',
-  '정책/정치',
-  '인공지능',
+...
+/**
+ * 검색, 시장, 중요도, 섹터, 계정, 기간 등 복합 필터 기능을 제공하는 컴포넌트입니다.
+ * @param {FeedFilterProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 인사이트 필터 UI
+ */
+export function FeedFilter({
+...
   '반도체',
   '2차전지',
   '빅테크',

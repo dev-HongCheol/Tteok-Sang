@@ -1,13 +1,18 @@
+/**
+ * 수집과 분석 단계를 통합하여 실행하는 전체 파이프라인 제어 모듈입니다.
+ */
 import { supabase } from '@/shared/api/supabase/client';
 import { syncExpertFeed } from '@/features/sync-feed/model/sync-logic';
 import { analyzeFeedsBatch } from '@/features/analyze-feed/model/analysis-logic';
 import type { Feed } from '@/entities/feed/model/types';
 
 /**
- * 프로젝트의 전체 수집 및 분석 파이프라인을 실행합니다.
+ * 모든 전문가로부터 최신 피드를 수집하고, 신규 수집된 피드에 대해 AI 분석을 실행합니다.
+ * 실행 결과는 ts_pipeline_logs 테이블에 기록됩니다.
+ * @returns {Promise<void>}
  */
 export const runFullPipeline = async () => {
-  console.log('🚀 파이프라인 시작...');
+...
   
   const { data: logData, error: logInitError } = await supabase
     .from('ts_pipeline_logs')

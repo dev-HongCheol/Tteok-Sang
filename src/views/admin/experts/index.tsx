@@ -1,3 +1,6 @@
+/**
+ * 관리자 전용 전문가 및 시스템 관리 페이지 뷰입니다.
+ */
 'use client';
 
 import { AddExpertForm } from '@/features/manage-experts/ui/AddExpertForm';
@@ -5,6 +8,10 @@ import { ExpertList } from '@/features/manage-experts/ui/ExpertList';
 import { PipelineLogs } from '@/features/manage-system/ui/PipelineLogs';
 import { SystemSettings } from '@/features/manage-system/ui/SystemSettings';
 
+/**
+ * 전문가 관리 및 시스템 설정을 위한 관리자 페이지 컴포넌트입니다.
+ * @returns {JSX.Element} 전문가 관리 페이지 UI
+ */
 export default function ExpertsPage() {
   return (
     <div className='container max-w-7xl mx-auto py-10 px-4'>

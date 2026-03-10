@@ -1,3 +1,6 @@
+/**
+ * 서비스 메인 대시보드인 피드 목록 페이지 뷰입니다.
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
@@ -12,8 +15,9 @@ import { InsightCard } from '@/widgets/insight-card/ui/InsightCard';
 import type { MarketType } from '@/entities/insight/model/types';
 
 /**
- * 메인 피드 대시보드 뷰
+ * 메인 피드 대시보드 뷰 컴포넌트입니다.
  * 고도화된 AI 분석 인사이트를 필터링하여 실시간으로 확인합니다.
+ * @returns {JSX.Element} 메인 피드 대시보드 UI
  */
 export default function MainFeedView() {
   const today = new Date();

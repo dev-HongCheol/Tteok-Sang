@@ -1,3 +1,6 @@
+/**
+ * Gemini AI를 사용하여 수집된 피드를 분석하고 인사이트를 추출하는 비즈니스 로직 모듈입니다.
+ */
 import { z } from 'zod';
 import type { Feed } from '@/entities/feed/model/types';
 import type { CreateInsight, Insight } from '@/entities/insight/model/types';
@@ -45,7 +48,10 @@ const SECTOR_LIST = [
 ];
 
 /**
- * 분석 실패 시 DB에 저장할 기본값 생성
+ * 분석 실패 시 DB에 저장할 기본값(Fallback) 인사이트 객체를 생성합니다.
+ * @param {string} feedId 원본 피드 ID
+ * @param {string} reason 분석 실패 사유
+ * @returns {CreateInsight} 폴백 인사이트 객체
  */
 const createFallbackInsight = (feedId: string, reason: string): CreateInsight => ({
   feed_id: feedId,
@@ -65,8 +71,8 @@ const createFallbackInsight = (feedId: string, reason: string): CreateInsight =>
 
 /**
  * 여러 피드를 한꺼번에 AI로 분석하고 결과를 DB에 저장합니다.
- * @param feeds 분석 대상 피드 리스트
- * @returns 저장된 인사이트 데이터 리스트
+ * @param {Feed[]} feeds 분석 대상 피드 리스트
+ * @returns {Promise<Insight[]>} 저장된 인사이트 데이터 리스트
  */
 export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<Insight[]> => {
   if (feeds.length === 0) return [];
