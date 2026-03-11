@@ -12,7 +12,7 @@ const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
  * JSON 모드 사용을 위해 응답 형식이 application/json으로 설정되어 있습니다.
  */
 export const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-2.5-flash',
+  model: 'Gemini 3.1 Flash Lite',
   generationConfig: {
     responseMimeType: 'application/json',
   },

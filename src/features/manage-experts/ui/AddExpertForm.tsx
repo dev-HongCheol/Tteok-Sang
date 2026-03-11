@@ -3,14 +3,14 @@
  */
 'use client';
 
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
+import { addExpert } from '@/entities/expert/api/expert';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { toast } from 'sonner';
-import { addExpert } from '@/entities/expert/api/expert';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const expertSchema = z.object({
   twitter_handle: z.string().min(1, '트위터 핸들을 입력해주세요.'),
@@ -24,7 +24,7 @@ type ExpertFormValues = z.infer<typeof expertSchema>;
  * @returns {JSX.Element} 전문가 등록 폼 UI
  */
 export function AddExpertForm() {
-...
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -57,28 +57,28 @@ export function AddExpertForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mb-8 flex flex-col gap-4">
-      <div className="flex gap-2">
-        <div className="flex-1">
+    <form onSubmit={handleSubmit(onSubmit)} className='mb-8 flex flex-col gap-4'>
+      <div className='flex gap-2'>
+        <div className='flex-1'>
           <Input
             {...register('twitter_handle')}
-            placeholder="트위터 ID (예: Alisvolatprop12)"
+            placeholder='트위터 ID (예: Alisvolatprop12)'
             className={errors.twitter_handle ? 'border-destructive' : ''}
           />
         </div>
-        <div className="flex-1">
+        <div className='flex-1'>
           <Input
             {...register('name')}
-            placeholder="전문가 이름 (미입력 시 ID 사용)"
+            placeholder='전문가 이름 (미입력 시 ID 사용)'
             className={errors.name ? 'border-destructive' : ''}
           />
         </div>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type='submit' disabled={mutation.isPending}>
           {mutation.isPending ? '추가 중...' : '추가'}
         </Button>
       </div>
       {(errors.twitter_handle || errors.name) && (
-        <p className="text-xs text-destructive">
+        <p className='text-xs text-destructive'>
           {errors.twitter_handle?.message || errors.name?.message}
         </p>
       )}

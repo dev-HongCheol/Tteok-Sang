@@ -24,7 +24,7 @@ interface ExpertMultiSelectProps {
  * @returns {JSX.Element} 전문가 선택 리스트 UI
  */
 export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSelectProps) {
-...
+  const { data: experts, isLoading } = useQuery({
     queryKey: ['experts'],
     queryFn: getExperts,
   });
