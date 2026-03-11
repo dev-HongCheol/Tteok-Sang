@@ -67,13 +67,13 @@ export function InsightCard({ insight }: InsightCardProps) {
 
   const sentimentTheme = {
     Bullish: {
-      label: '상승(호재)',
+      label: '호재',
       icon: TrendingUp,
       color: 'text-emerald-600 dark:text-emerald-400',
       bg: 'bg-emerald-50 dark:bg-emerald-500/10',
     },
     Bearish: {
-      label: '하락(악재)',
+      label: '악재',
       icon: TrendingDown,
       color: 'text-rose-600 dark:text-rose-400',
       bg: 'bg-rose-50 dark:bg-rose-500/10',
@@ -99,7 +99,7 @@ export function InsightCard({ insight }: InsightCardProps) {
       <CardHeader className='p-4 pb-2 space-y-1'>
         {/* 1열: 관련성 | 중요도 | 감성점수 ... 시간 */}
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2 text-sm font-bold'>
+          <div className='flex items-center gap-2 text-sm'>
             {/* 중요도 */}
             {importance && (
               <Badge
@@ -175,7 +175,7 @@ export function InsightCard({ insight }: InsightCardProps) {
                   className='flex items-center gap-1 group hover:opacity-80 transition-opacity'
                   type='button'
                 >
-                  <span className='text-zinc-400 font-black'>관련성</span>
+                  <span className='text-zinc-400'>관련성</span>
                   <span className='text-primary text-sm font-black'>{relevance_score}%</span>
                 </button>
               </PopoverTrigger>
@@ -212,7 +212,10 @@ export function InsightCard({ insight }: InsightCardProps) {
         {/* 2열: 시장분류 | 섹터 */}
         <div className='flex items-center gap-2'>
           {market_type && (
-            <div title={market_type} className='w-6 h-4 flex items-center justify-center text-sm'>
+            <div
+              title={market_type}
+              className='w-6 h-4 flex items-center justify-center text-sm font-emoji'
+            >
               {marketIcons[market_type]}
             </div>
           )}

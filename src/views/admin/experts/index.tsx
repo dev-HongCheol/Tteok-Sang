@@ -14,9 +14,9 @@ import { SystemSettings } from '@/features/manage-system/ui/SystemSettings';
  */
 export default function ExpertsPage() {
   return (
-    <div className='container max-w-7xl mx-auto py-10 px-4'>
-      <header className='mb-10 text-center'>
-        <h1 className='text-4xl font-bold tracking-tight'>Tteok-Sang Admin</h1>
+    <div className='container max-w-7xl mx-auto py-4 px-4'>
+      <header className='mb-2 text-center'>
+        <h1 className='text-2xl font-bold tracking-tight'>Tteok-Sang Admin</h1>
         <p className='text-muted-foreground mt-2'>AI 경제 피드 큐레이터 관리 시스템</p>
       </header>
 
