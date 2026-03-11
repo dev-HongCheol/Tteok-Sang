@@ -24,7 +24,7 @@ const PAGE_SIZE = 10;
  * @returns {JSX.Element} 파이프라인 로그 목록 UI
  */
 export function PipelineLogs() {
-...
+  const [page, setPage] = useState(0);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({

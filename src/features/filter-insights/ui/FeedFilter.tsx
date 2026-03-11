@@ -41,14 +41,12 @@ interface FeedFilterProps {
   /** 시장 분류 선택 변경 핸들러 */
   onMarketsChange: (markets: MarketType[]) => void;
 }
-...
-/**
- * 검색, 시장, 중요도, 섹터, 계정, 기간 등 복합 필터 기능을 제공하는 컴포넌트입니다.
- * @param {FeedFilterProps} props 컴포넌트 Props
- * @returns {JSX.Element} 인사이트 필터 UI
- */
-export function FeedFilter({
-...
+
+/** PRD 정의 섹터 리스트 */
+const SECTORS = [
+  '거시경제',
+  '정책/정치',
+  '인공지능',
   '반도체',
   '2차전지',
   '빅테크',
@@ -70,7 +68,9 @@ const IMPORTANCES = ['Low', 'Medium', 'High'];
 const MARKETS: MarketType[] = ['KR', 'US', 'Global'];
 
 /**
- * 고도화된 인사이트 필터링 컴포넌트
+ * 검색, 시장, 중요도, 섹터, 계정, 기간 등 복합 필터 기능을 제공하는 컴포넌트입니다.
+ * @param {FeedFilterProps} props 컴포넌트 Props
+ * @returns {JSX.Element} 인사이트 필터 UI
  */
 export function FeedFilter({
   searchQuery,
