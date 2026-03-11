@@ -65,7 +65,7 @@ const SECTORS = [
 ];
 
 const IMPORTANCES = ['Low', 'Medium', 'High'];
-const MARKETS: MarketType[] = ['KR', 'US', 'Global'];
+const MARKETS: MarketType[] = ['Global', 'KR', 'US'];
 
 /**
  * 검색, 시장, 중요도, 섹터, 계정, 기간 등 복합 필터 기능을 제공하는 컴포넌트입니다.
@@ -132,12 +132,12 @@ export function FeedFilter({
       {/* 1. 시장 분류 필터 */}
       <div className='space-y-3'>
         <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-          Market
+          시장
         </Label>
         <div className='flex flex-wrap gap-1.5'>
           <Badge
             variant={selectedMarkets.length === 0 ? 'default' : 'outline'}
-            className='cursor-pointer px-2.5 py-0.5 text-sm font-bold'
+            className='cursor-pointer px-2.5 py-0.5 text-sm'
             onClick={() => onMarketsChange([])}
           >
             전체
@@ -147,14 +147,14 @@ export function FeedFilter({
               key={market}
               variant={selectedMarkets.includes(market) ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer px-2.5 py-0.5 text-sm font-bold transition-all',
+                'cursor-pointer px-2.5 py-0.5 text-sm transition-all font-emoji',
                 selectedMarkets.includes(market)
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-transparent',
               )}
               onClick={() => toggleMarket(market)}
             >
-              {market === 'KR' ? '🇰🇷 국장' : market === 'US' ? '🇺🇸 미장' : '🌐 Global'}
+              {market === 'KR' ? '🇰🇷' : market === 'US' ? '🇺🇸' : '🌐'}
             </Badge>
           ))}
         </div>
@@ -163,7 +163,7 @@ export function FeedFilter({
       {/* 2. 중요도 필터 */}
       <div className='space-y-3'>
         <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-          Importance
+          중요도
         </Label>
         <div className='flex flex-wrap gap-1.5'>
           {IMPORTANCES.map((imp) => (
@@ -171,7 +171,7 @@ export function FeedFilter({
               key={imp}
               variant={selectedImportances.includes(imp) ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer px-2.5 py-0.5 text-sm font-bold',
+                'cursor-pointer px-2.5 py-0.5 text-sm',
                 selectedImportances.includes(imp)
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-transparent',
@@ -198,12 +198,12 @@ export function FeedFilter({
       {/* 4. 섹터 필터 */}
       <div className='space-y-3'>
         <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-          Sectors
+          섹터
         </Label>
         <div className='flex flex-wrap gap-1.5'>
           <Badge
             variant={selectedSectors.length === 0 ? 'default' : 'outline'}
-            className='cursor-pointer px-2.5 py-0.5 text-sm font-bold'
+            className='cursor-pointer px-2.5 py-0.5 text-sm'
             onClick={() => onSectorsChange([])}
           >
             전체
@@ -213,7 +213,7 @@ export function FeedFilter({
               key={sector}
               variant={selectedSectors.includes(sector) ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer px-2.5 py-0.5 text-sm font-medium transition-all',
+                'cursor-pointer px-2.5 py-0.5 text-sm transition-all',
                 selectedSectors.includes(sector)
                   ? 'bg-primary/20 text-primary border-primary/30'
                   : 'bg-transparent',
@@ -232,7 +232,7 @@ export function FeedFilter({
       {/* 6. 기간 선택 */}
       <div className='space-y-3'>
         <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-          Date Range
+          검색 기간
         </Label>
         <DateRangePicker value={dateRange} onChange={onDateRangeChange} />
       </div>
@@ -243,7 +243,7 @@ export function FeedFilter({
           variant='ghost'
           size='sm'
           onClick={clearFilters}
-          className='w-full gap-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all'
+          className='w-full gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all'
         >
           <X className='w-3.5 h-3.5' />
           필터 모두 초기화

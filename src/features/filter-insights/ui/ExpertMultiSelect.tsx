@@ -74,7 +74,7 @@ export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSe
         <button
           type='button'
           onClick={handleToggleAll}
-          className='text-sm text-primary hover:underline font-bold'
+          className='text-sm text-primary hover:underline'
         >
           전체 선택
         </button>
@@ -99,8 +99,8 @@ export function ExpertMultiSelect({ selectedExpertIds, onChange }: ExpertMultiSe
                   className='pointer-events-none'
                 />
                 <div className='flex flex-col flex-1 overflow-hidden pointer-events-none'>
-                  <span className='text-xs font-bold truncate'>@{expert.twitter_handle}</span>
-                  <span className='text-sm text-muted-foreground truncate'>{expert.name}</span>
+                  <span className='text-sm truncate'>@{expert.twitter_handle}</span>
+                  <span className='text-xs text-muted-foreground truncate'>{expert.name}</span>
                 </div>
               </div>
             );

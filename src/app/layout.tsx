@@ -2,20 +2,10 @@
  * 애플리케이션의 공통 레이아웃을 정의하는 모듈입니다.
  */
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import 'pretendard/dist/web/static/pretendard.css';
 import { ReactQueryProvider } from '@/shared/lib/react-query/provider';
 import { Toaster } from '@/shared/ui/sonner';
-
-const geistSans = Geist({
-  variable: '--font-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-});
 
 /** 애플리케이션 기본 메타데이터 설정 */
 export const metadata: Metadata = {
@@ -37,7 +27,7 @@ export default function RootLayout({
   return (
     // dark 클래스를 추가하여 다크모드 고정
     <html lang="ko" className="dark" style={{ colorScheme: 'dark' }}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+      <body className="antialiased bg-background text-foreground font-sans">
         <ReactQueryProvider>
           {children}
           <Toaster position="top-center" richColors />

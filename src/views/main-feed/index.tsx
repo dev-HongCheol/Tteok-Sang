@@ -10,9 +10,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { type GetInsightsParams, getInsights } from '@/entities/insight/api/insight';
+import type { MarketType } from '@/entities/insight/model/types';
 import { FeedFilter } from '@/features/filter-insights/ui/FeedFilter';
 import { InsightCard } from '@/widgets/insight-card/ui/InsightCard';
-import type { MarketType } from '@/entities/insight/model/types';
 
 /**
  * 메인 피드 대시보드 뷰 컴포넌트입니다.
@@ -55,14 +55,14 @@ export default function MainFeedView() {
 
   return (
     <div className='min-h-screen bg-background text-foreground'>
-      <div className='container mx-auto py-10 px-4'>
-        <header className='mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-8'>
+      <div className='container mx-auto py-4 px-4'>
+        <header className='mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-4'>
           <div>
             <div className='flex items-center gap-3 mb-2'>
               <div className='p-2 bg-primary rounded-xl shadow-lg shadow-primary/20'>
                 <TrendingUp className='w-7 h-7 text-primary-foreground' />
               </div>
-              <h1 className='text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent'>
+              <h1 className='text-2xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent'>
                 Tteok-Sang
               </h1>
             </div>
