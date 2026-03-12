@@ -13,6 +13,7 @@ import { type GetInsightsParams, getInsights } from '@/entities/insight/api/insi
 import type { MarketType } from '@/entities/insight/model/types';
 import { FeedFilter } from '@/features/filter-insights/ui/FeedFilter';
 import { InsightCard } from '@/widgets/insight-card/ui/InsightCard';
+import { SentimentRadar } from '@/widgets/sentiment-radar/ui/SentimentRadar';
 
 /**
  * 메인 피드 대시보드 뷰 컴포넌트입니다.
@@ -96,6 +97,10 @@ export default function MainFeedView() {
 
           {/* 메인 인사이트 목록 */}
           <main className='lg:col-span-3'>
+            <SentimentRadar 
+              startDate={dateRange?.from?.toISOString()} 
+              endDate={dateRange?.to?.toISOString()} 
+            />
             {isLoading ? (
               <div className='flex flex-col items-center justify-center py-32 space-y-4'>
                 <Loader2 className='h-12 w-12 animate-spin text-primary/60' />
