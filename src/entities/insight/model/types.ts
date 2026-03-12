@@ -61,3 +61,17 @@ export interface Insight {
 
 /** 인사이트 생성을 위한 데이터 타입 */
 export type CreateInsight = Omit<Insight, 'id' | 'created_at'>;
+
+/** 종목별 센티먼트 집계 결과 인터페이스 (Ranking용) */
+export interface StockSentimentRanking {
+  /** 종목 티커 */
+  ticker: string;
+  /** 공식 한글 종목명 */
+  name_ko: string;
+  /** 최근 기간 동안의 합산 센티먼트 점수 (-5 ~ +5 * 언급횟수) */
+  total_score: number;
+  /** 해당 종목이 언급된 횟수 */
+  mention_count: number;
+  /** 언급된 관점들의 평균 강도 (1~5) */
+  avg_intensity: number;
+}
