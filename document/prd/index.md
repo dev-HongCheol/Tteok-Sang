@@ -17,6 +17,7 @@
 | :--- | :--- | :--- |
 | `00_base_initial-setup.md` | 프로젝트 기술 스택 및 FSD 구조 | `Next.js`, `FSD`, `Testing` |
 | `00_base_data-modeling.md` | **진실의 원천.** DB 스키마 및 타입 | `Table`, `Schema`, `Type` |
+| `00_base_deployment-infra.md` | **인프라.** Vercel 배포 및 환경 변수 | `Vercel`, `Deployment`, `ENV` |
 
 ### 1. 정책 및 로직 (Logic)
 | 파일명 | 설명 | 핵심 키워드 |
