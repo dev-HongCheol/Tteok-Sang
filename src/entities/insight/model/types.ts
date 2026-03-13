@@ -68,6 +68,8 @@ export interface StockSentimentRanking {
   ticker: string;
   /** 공식 한글 종목명 */
   name_ko: string;
+  /** 대표 섹터 (정보가 없을 경우 '기타') */
+  sector: string;
   /** 최근 기간 동안의 합산 센티먼트 점수 (-5 ~ +5 * 언급횟수) */
   total_score: number;
   /** 해당 종목이 언급된 횟수 */

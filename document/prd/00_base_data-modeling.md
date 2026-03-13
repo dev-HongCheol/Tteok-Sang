@@ -36,11 +36,11 @@
 | summary_line | text | | 핵심 논리 1줄 요약 |
 | importance | text | check (Low, Medium, High) | 중요도 레벨 |
 | market_type | text | check (KR, US, Global) | 대상 시장 분류 |
-| mentioned_stocks | jsonb | | 언급된 종목 리스트 (`[{ticker, name_ko}]`) |
+| mentioned_stocks | jsonb | | 언급된 종목 리스트 (`[{ticker, name_ko}]`. 티커 미확인 시 'N/A') |
 | is_explicit | boolean | | 종목명 직접 명시 여부 |
-| sectors | text[] | | 관련 섹터 태그 리스트 |
-| sentiment_direction | text | check (Bullish, Bearish, Neutral) | 투자 방향성 |
-| sentiment_intensity | int | check (1-5) | 관점의 강도 |
+| sectors | text[] | | 관련 섹터 태그 리스트 (첫 번째 요소가 대표 섹터로 간주됨) |
+| sentiment_direction | text | check (Bullish, Bearish, Neutral) | 투자 방향성 (상승/하락/중립) |
+| sentiment_intensity | int | check (1-5) | 관점의 강도 (1:매우약함 ~ 5:매우강함) |
 | investment_horizon | text | check (intraday, swing, long-term) | 투자 시계/호흡 |
 | confidence_level | text | check (low, medium, high) | AI 확신도 |
 | logic_type | text[] | | 판단 근거 유형 리스트 |
@@ -50,12 +50,27 @@
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 | :--- | :--- | :--- | :--- |
 | id | uuid | PK, default: uuid_generate_v4() | 고유 ID |
-| type | text | not null | 로그 유형 (`sync`, `analysis`, `full`) |
-| status | text | not null | 상태 (`success`, `failed`, `running`) |
-| message | text | | 실행 결과 상세 메시지 |
-| metadata | jsonb | | 처리 건수 등 상세 데이터 |
-| error_log | text | | 에러 발생 시 스택 트레이스 |
-| created_at | timestamptz | default: now() | 생성 일시 |
+| started_at | timestamptz | default: now() | 실행 시작 시점 |
+| status | text | | 상태 (`success`, `failed`, `running`, `완료` 등) |
+| collected_count | int | default: 0 | 수집된 피드 수 |
+| analyzed_count | int | default: 0 | 분석 완료된 인사이트 수 |
+| error_message | text | | 에러 발생 시 상세 메시지 |
+| created_at | timestamptz | default: now() | 로그 생성 일시 |
 
-## 3. 단계별 구현 로드맵
+## 3. Functions & RPCs (서버측 로직)
+
+### 3.1 get_stock_sentiment_ranking (종목별 센티먼트 집계)
+- **목적:** 특정 기간 동안의 종목별 센티먼트 점수 합계 및 언급 횟수를 산출하여 랭킹 제공.
+- **파라미터:**
+  - `start_date` (timestamptz): 집계 시작 일시
+  - `end_date` (timestamptz): 집계 종료 일시
+- **핵심 로직 (하이브리드 그룹화):**
+  1. `mentioned_stocks` 배열을 Unnest 하여 개별 종목 데이터 추출.
+  2. `ticker`가 존재하고 `'N/A'`가 아니면 **티커**를 기준으로 그룹화.
+  3. `ticker`가 없거나 `'N/A'`이면 **한글 종목명(`name_ko`)**을 기준으로 그룹화.
+  4. 점수 계산: `Bullish` 시 `intensity`, `Bearish` 시 `-intensity` 합산.
+  5. 대표값 결정: 동일 그룹 내에서 가장 최근 발행된 피드의 정보를 티커/이름/섹터의 대표값으로 사용.
+- **반환 필드:** `ticker`, `name_ko`, `sector`, `total_score`, `mention_count`, `avg_intensity`
+
+## 4. 단계별 구현 로드맵
 (기존 로드맵 유지)
