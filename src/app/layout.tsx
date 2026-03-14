@@ -6,6 +6,7 @@ import './globals.css';
 import 'pretendard/dist/web/static/pretendard.css';
 import { ReactQueryProvider } from '@/shared/lib/react-query/provider';
 import { Toaster } from '@/shared/ui/sonner';
+import { TooltipProvider } from '@/shared/ui/tooltip';
 
 /** 애플리케이션 기본 메타데이터 설정 */
 export const metadata: Metadata = {
@@ -26,11 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     // dark 클래스를 추가하여 다크모드 고정
-    <html lang="ko" className="dark" style={{ colorScheme: 'dark' }}>
-      <body className="antialiased bg-background text-foreground font-sans">
+    <html lang='ko' className='dark' style={{ colorScheme: 'dark' }}>
+      <body className='antialiased bg-background text-foreground font-sans'>
         <ReactQueryProvider>
-          {children}
-          <Toaster position="top-center" richColors />
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster position='top-center' richColors />
         </ReactQueryProvider>
       </body>
     </html>

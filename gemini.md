@@ -14,7 +14,7 @@
 - **State Management/Data Fetching:** Axios, TanStack Query (v5)
 - **Form & Validation:** React Hook Form, Zod
 - **Database/Auth:** Self-hosted Supabase ([https://supa.devhong.cc](https://supa.devhong.cc))
-- **AI Model:** Gemini 2.5 Flash (무료 티어)
+- **AI Model:** Gemini 3.1 Flash Lite (무료 티어)
 - **Architecture:** Feature-Sliced Design (FSD)
 - **Testing:** Vitest, React Testing Library, Playwright (E2E)
 
@@ -84,7 +84,10 @@
 ## 🔒 커밋 및 형상 관리 규칙 (Strict Policy)
 
 1. **자동 커밋 금지:** 어떠한 도구(CLI, 스크립트 등)도 사용자의 명시적 요청 없이 커밋을 생성해서는 안 됩니다.
-2. **DB 스키마 동기화:** 신규 마이그레이션 파일(`infra/supabase/migration_*.sql`)이 생성되면, 반드시 그 내용을 `infra/supabase/schema.sql`에 반영하여 `schema.sql`이 항상 최신 상태를 유지하도록 해야 한다.
+2. **DB 스키마 및 RPC 동기화 (Absolute Rule):** 
+   - 신규 마이그레이션 파일(`infra/supabase/migration_*.sql`)이 생성되거나 DB 함수(RPC)가 수정되면, **반드시 그 내용을 `infra/supabase/schema.sql`에 즉시 반영**해야 한다.
+   - `schema.sql`은 항상 최신 상태를 유지해야 하며, 새로운 인프라 환경에서 이 파일 하나만 실행해도 현재와 동일한 테이블, 인덱스, Seed 데이터, RPC 함수가 완벽하게 세팅되어야 한다.
+   - 모든 작업 단계에서 DB 관련 변경이 있다면 `schema.sql` 업데이트 여부를 최우선으로 확인한다.
 3. **커밋 워크플로우:**
    - 기능 구현 완료 및 테스트 코드 작성
    - `pnpm test` 등을 통한 테스트 통과 확인

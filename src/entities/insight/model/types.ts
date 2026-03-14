@@ -23,6 +23,19 @@ export interface MentionedStock {
   ticker: string;
   /** 공식 한글 종목명 (예: 엔비디아, 삼성전자) */
   name_ko: string;
+  /** 관리자 검증 완료 여부 (정규화 후 추가됨) */
+  is_verified?: boolean;
+}
+
+/** 종목 마스터 데이터 (ts_stocks) 엔티티 */
+export interface Stock {
+  ticker: string;
+  name_ko: string;
+  market_type: MarketType | 'Global';
+  aliases: string[];
+  is_verified: boolean;
+  mention_count: number;
+  created_at: string;
 }
 
 /** Gemini AI가 분석한 피드별 상세 인사이트 엔티티 */
