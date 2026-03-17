@@ -12,7 +12,6 @@
 | id | uuid | PK, default: uuid_generate_v4() | 고유 ID |
 | name | text | not null | 전문가 이름 |
 | twitter_handle | text | not null, unique | 트위터 아이디 |
-| is_active | boolean | default: true | 수집 활성화 상태 |
 | last_synced_at | timestamptz | | 마지막 수집 시점 |
 | created_at | timestamptz | default: now() | 생성 일시 |
 
@@ -36,7 +35,7 @@
 | summary_line | text | | 핵심 논리 1줄 요약 |
 | importance | text | check (Low, Medium, High) | 중요도 레벨 |
 | market_type | text | check (KR, US, Global) | 대상 시장 분류 |
-| mentioned_stocks | jsonb | | 언급된 종목 리스트 (`[{ticker, name_ko}]`. 티커 미확인 시 'N/A') |
+| mentioned_stocks | jsonb | | 언급된 종목 리스트 (`[{ticker, name_ko, is_verified}]`. ts_stocks 기반 정규화 결과 저장) |
 | is_explicit | boolean | | 종목명 직접 명시 여부 |
 | sectors | text[] | | 관련 섹터 태그 리스트 (첫 번째 요소가 대표 섹터로 간주됨) |
 | sentiment_direction | text | check (Bullish, Bearish, Neutral) | 투자 방향성 (상승/하락/중립) |
@@ -46,7 +45,18 @@
 | logic_type | text[] | | 판단 근거 유형 리스트 |
 | created_at | timestamptz | default: now() | 생성 일시 |
 
-### 2.4 ts_pipeline_logs (시스템 실행 로그)
+### 2.4 ts_stocks (종목 마스터 데이터)
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| :--- | :--- | :--- | :--- |
+| ticker | text | PK | 종목 공식 티커 (식별자) |
+| name_ko | text | not null | 공식 한글 종목명 |
+| market_type | text | check (KR, US, Global) | 상장 시장 분류 |
+| aliases | text[] | default: '{}' | 오타, 영문명 등 검색/매칭용 별칭 리스트 |
+| is_verified | boolean | default: false | 관리자 검증 완료 여부 |
+| mention_count | int | default: 0 | 누적 언급 횟수 (우선순위 관리용) |
+| created_at | timestamptz | default: now() | 등록 일시 |
+
+### 2.5 ts_pipeline_logs (시스템 실행 로그)
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 | :--- | :--- | :--- | :--- |
 | id | uuid | PK, default: uuid_generate_v4() | 고유 ID |
@@ -60,17 +70,32 @@
 ## 3. Functions & RPCs (서버측 로직)
 
 ### 3.1 get_stock_sentiment_ranking (종목별 센티먼트 집계)
-- **목적:** 특정 기간 동안의 종목별 센티먼트 점수 합계 및 언급 횟수를 산출하여 랭킹 제공.
-- **파라미터:**
-  - `start_date` (timestamptz): 집계 시작 일시
-  - `end_date` (timestamptz): 집계 종료 일시
-- **핵심 로직 (하이브리드 그룹화):**
-  1. `mentioned_stocks` 배열을 Unnest 하여 개별 종목 데이터 추출.
-  2. `ticker`가 존재하고 `'N/A'`가 아니면 **티커**를 기준으로 그룹화.
-  3. `ticker`가 없거나 `'N/A'`이면 **한글 종목명(`name_ko`)**을 기준으로 그룹화.
-  4. 점수 계산: `Bullish` 시 `intensity`, `Bearish` 시 `-intensity` 합산.
-  5. 대표값 결정: 동일 그룹 내에서 가장 최근 발행된 피드의 정보를 티커/이름/섹터의 대표값으로 사용.
-- **반환 필드:** `ticker`, `name_ko`, `sector`, `total_score`, `mention_count`, `avg_intensity`
+- **목적:** 특정 기간 동안의 종목별 센티먼트 점수 합계 및 언급 횟수를 산출하여 랭킹/맵 제공.
+- **핵심 로직 (런타임 정규화):** `ts_insights`의 데이터를 `ts_stocks` 마스터 테이블과 실시간 조인하여 최신 티커/이름으로 반환.
+
+### 3.2 sync_stock_normalization (데이터 소급 동기화)
+- **목적:** 종목 마스터 정보 변경(티커 수정, 별칭 추가 등) 시 기존 인사이트 데이터를 최신 정보로 일괄 업데이트 및 중복 병합.
+- **동작:** 동일 이름을 가진 미검증 종목들의 언급 횟수를 합산하고 과거 인사이트 JSON 데이터를 일괄 교체.
+
+### 3.3 refresh_all_stock_counts (언급 횟수 전수 재계산)
+- **목적:** 전체 인사이트 데이터를 전수 조사하여 모든 종목의 누적 언급 횟수를 최신화.
+
+### 3.4 increment_stock_mention (실시간 언급 횟수 증가)
+- **목적:** AI 분석 시 특정 종목이 발견되면 마스터 데이터의 언급 횟수를 즉시 1 증가시킴.
 
 ## 4. 단계별 구현 로드맵
-(기존 로드맵 유지)
+
+### Phase 1: 기반 인프라 및 수집 자동화 (완료)
+- [x] Supabase 기본 스키마 설계 및 테이블 생성.
+- [x] Nitter RSS 기반 전문가 피드 증분 수집 로직 구현.
+
+### Phase 2: AI 분석 및 종목 마스터 고도화 (완료)
+- [x] Gemini 3.1 Flash Lite 기반 배치 분석 파이프라인 구현.
+- [x] `ts_stocks` 마스터 데이터 도입 및 런타임 정규화 RPC 개발.
+- [x] 어드민 통합 관리 시스템 (전문가/종목 마스터/시스템 로그) 구축.
+- [x] 별칭(Alias) 기반 지능형 데이터 병합 및 언급 횟수 누적 로직 완성.
+
+### Phase 3: 투자 인사이트 시각화 및 서비스 최적화 (진행 중)
+- [x] Finviz 스타일의 Sentiment Market Map (트리맵) 구현.
+- [ ] 전문가별/섹터별 투자 적중률 통계 대시보드 추가.
+- [ ] 사용자 구독 기반 호재/악재 실시간 알림 시스템.
