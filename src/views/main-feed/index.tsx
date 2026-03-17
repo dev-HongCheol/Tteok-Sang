@@ -5,7 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { endOfDay, startOfDay } from 'date-fns';
-import { Loader2, Settings, TrendingUp } from 'lucide-react';
+import { Loader2, Settings, Target, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
@@ -68,9 +68,12 @@ export default function MainFeedView() {
               </h1>
             </div>
             <p className='text-muted-foreground text-lg font-medium flex justify-between items-center gap-3'>
-              <span>실시간 투자 센티먼트 레이더</span>
+              <span>투자 센티먼트 레이더</span>
               <Link href={'/admin/experts'} title='설정페이지 이동'>
                 <Settings className='size-5 hover:rotate-90 transition-transform duration-300' />
+              </Link>
+              <Link href={'/sentiment'} title='투자점수'>
+                <Target className='size-5 hover:rotate-90 transition-transform duration-300' />
               </Link>
             </p>
           </div>
@@ -97,9 +100,10 @@ export default function MainFeedView() {
 
           {/* 메인 인사이트 목록 */}
           <main className='lg:col-span-3'>
-            <SentimentRadar 
-              startDate={dateRange?.from?.toISOString()} 
-              endDate={dateRange?.to?.toISOString()} 
+            <SentimentRadar
+              startDate={dateRange?.from?.toISOString()}
+              endDate={dateRange?.to?.toISOString()}
+              hideMap={true}
             />
             {isLoading ? (
               <div className='flex flex-col items-center justify-center py-32 space-y-4'>

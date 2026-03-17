@@ -108,7 +108,7 @@ export const getStockSentimentRanking = async (
   startDate?: string,
   endDate?: string,
 ): Promise<StockSentimentRanking[]> => {
-  const { data, error } = await supabase.rpc('get_stock_sentiment_ranking_v2', {
+  const { data, error } = await supabase.rpc('get_stock_sentiment_ranking', {
     start_date: startDate,
     end_date: endDate,
   });

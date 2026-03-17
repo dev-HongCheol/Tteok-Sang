@@ -23,6 +23,19 @@ export interface MentionedStock {
   ticker: string;
   /** 공식 한글 종목명 (예: 엔비디아, 삼성전자) */
   name_ko: string;
+  /** 관리자 검증 완료 여부 (정규화 후 추가됨) */
+  is_verified?: boolean;
+}
+
+/** 종목 마스터 데이터 (ts_stocks) 엔티티 */
+export interface Stock {
+  ticker: string;
+  name_ko: string;
+  market_type: MarketType | 'Global';
+  aliases: string[];
+  is_verified: boolean;
+  mention_count: number;
+  created_at: string;
 }
 
 /** Gemini AI가 분석한 피드별 상세 인사이트 엔티티 */
@@ -68,6 +81,8 @@ export interface StockSentimentRanking {
   ticker: string;
   /** 공식 한글 종목명 */
   name_ko: string;
+  /** 대표 섹터 (정보가 없을 경우 '기타') */
+  sector: string;
   /** 최근 기간 동안의 합산 센티먼트 점수 (-5 ~ +5 * 언급횟수) */
   total_score: number;
   /** 해당 종목이 언급된 횟수 */
