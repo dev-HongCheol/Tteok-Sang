@@ -3,10 +3,8 @@
  */
 'use server';
 
-import type { Feed } from '@/entities/feed/model/types';
-import { analyzeFeedsBatch } from '@/features/analyze-feed/model/analysis-logic';
 import { supabase } from '@/shared/api/supabase/client';
-import { runFullPipeline } from '../model/pipeline';
+import { runAnalysisOnly, runFullPipeline } from '../model/pipeline';
 
 /**
  * 서버 사이드에서 전체 파이프라인(수집+분석)을 실행합니다.
@@ -28,40 +26,34 @@ export async function triggerPipelineAction() {
  */
 export async function triggerAnalysisOnlyAction() {
   try {
-    // 1. 미분석 피드 조회
-    const { data: unanalyzedFeeds, error: feedsError } = await supabase
-      .from('ts_feeds')
-      .select('*, ts_insights(id)')
-      .returns<(Feed & { ts_insights: { id: string }[] })[]>();
+    const count = await runAnalysisOnly();
 
-    if (feedsError) throw new Error(`미분석 피드 조회 실패: ${feedsError.message}`);
-
-    const feedsToAnalyze = (unanalyzedFeeds || []).filter(
-      (f) => !f.ts_insights || f.ts_insights.length === 0,
-    );
-
-    if (feedsToAnalyze.length === 0) {
+    if (count === 0) {
       return { success: true, count: 0, message: '분석할 새로운 피드가 없습니다.' };
     }
 
-    // 2. 배치 분석 실행 (최대 10개 단위)
-    let totalAnalyzed = 0;
-    const BATCH_SIZE = 10;
-
-    for (let i = 0; i < feedsToAnalyze.length; i += BATCH_SIZE) {
-      const batch = feedsToAnalyze.slice(i, i + BATCH_SIZE);
-      const results = await analyzeFeedsBatch(batch);
-      totalAnalyzed += results.length;
-
-      // RPM 보호를 위한 짧은 지연
-      if (i + BATCH_SIZE < feedsToAnalyze.length) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-    }
-
-    return { success: true, count: totalAnalyzed };
+    return { success: true, count };
   } catch (error: any) {
     console.error('Server Action Error (Analysis Only):', error);
     return { success: false, error: error.message || '분석 중 오류가 발생했습니다.' };
+  }
+}
+
+/**
+ * DB에 저장된 동기화 주기를 업데이트합니다.
+ * @param {string} cronExpression Cron 표현식 (예: "0 2 * * *")
+ * @returns {Promise<{success: boolean, error?: string}>} 결과
+ */
+export async function updateSyncIntervalAction(cronExpression: string) {
+  try {
+    const { error } = await supabase
+      .from('ts_settings')
+      .upsert({ key: 'sync_interval', value: cronExpression }, { onConflict: 'key' });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('Update Interval Error:', error);
+    return { success: false, error: error.message };
   }
 }

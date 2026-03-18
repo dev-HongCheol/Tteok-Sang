@@ -1,44 +1,60 @@
 # PRD: 자동화 스케줄러 설정 (Automation Scheduler)
 
 ## 1. 개요
-- **목표:** 관리자가 매번 수동으로 실행하지 않아도, 시스템이 정해진 주기마다 자동으로 피드를 수집하고 분석하도록 설정한다.
-- **기술 스택:** Supabase Edge Functions, `pg_cron` 익스텐션.
+- **목표:** 전문가 피드 수집 및 AI 분석 파이프라인을 정해진 주기마다 자동으로 실행하여 데이터 최신성을 유지하며, 관리자가 웹 UI에서 이 주기를 직접 설정하고 상태를 모니터링할 수 있게 한다.
+- **기술 스택:** Supabase Edge Functions, `pg_cron` 익스텐션, Next.js API Routes, `ts_settings` 테이블.
 
 ## 2. 사용자 스토리
-- "시스템은 매 시간 정각에 자동으로 파이프라인을 실행해야 한다."
-- "자동 실행 결과(성공/실패 여부, 처리 건수)는 `ts_pipeline_logs` 테이블에 기록되어야 한다."
+- "관리자는 시스템 설정 UI에서 수집 주기를 선택(1시간~12시간 사이)할 수 있어야 한다."
+- "시스템은 설정된 주기에 맞춰 자동으로 실행되며, UI에 '현재 실행 주기'와 '마지막 동기화 시각'을 실시간으로 표시해야 한다."
+- "자동 실행 시, 이전 회차에서 비정상적으로 종료된 로그가 있다면 자동으로 정리하고 새로 시작해야 한다."
 
 ## 3. 기술적 상세 및 요구사항
 
-### 3.1 Edge Function (`sync-pipeline`)
-- **역할:** `runFullPipeline()` 함수를 호출하는 엔드포인트 제공.
-- **보안:** 외부의 무분별한 호출을 막기 위해 `Authorization` 헤더의 Bearer 토큰(Secret Key)을 검증.
+### 3.1 동적 스케줄링 관리
+- **설정 저장**: `ts_settings` 테이블의 `sync_interval` 키에 Cron 표현식을 저장한다.
+    - 예: `0 * * * *` (1시간), `0 */2 * * *` (2시간) 등.
+- **UI 표시 및 설정**: 
+    - `SystemSettings` 컴포넌트에서 `select`박스를 통해 주기를 선택하고 `updateSyncIntervalAction` 서버 액션으로 저장한다.
+    - `ts_pipeline_logs`에서 가장 최근 '완료'된 기록의 시각을 '마지막 동기화' 정보로 노출한다.
+- **트리거 보안**: Edge Function은 `CRON_SECRET_KEY`를 Bearer 토큰으로 검증하여 허가된 호출만 허용한다.
 
-### 3.2 pg_cron 설정
-- **기능:** PostgreSQL 내부에서 특정 시간에 HTTP 요청(Edge Function 호출)을 보내는 스케줄러.
-- **명령어 예시:**
-  ```sql
-  select cron.schedule(
-    'sync-pipeline-every-hour',
-    '0 * * * *',
-    $$ select net.http_post(
-         url:='https://[project].supabase.co/functions/v1/sync-pipeline',
-         headers:=jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer [YOUR_SECRET_KEY]')
-       ) $$
-  );
-  ```
+### 3.2 pg_cron 설정 예시 (SQL)
+```sql
+-- 설정된 주기에 따라 실행되는 태스크 등록
+-- pg_cron이 ts_settings 테이블의 값을 실시간으로 참조하게 하려면 동적 SQL 또는 별도의 업데이트 트리거가 필요함.
+-- 현재는 설정 변경 시 관리자가 수동으로 스케줄을 재등록하거나, Edge Function 호출 주기를 상위에서 관리함.
+select cron.schedule(
+  'sync-pipeline-task',
+  '0 * * * *', -- 기본 1시간 정각 (또는 DB 최신값 수동 반영)
+  $$ 
+  select net.http_post(
+    url := 'https://[YOUR_PROJECT_ID].supabase.co/functions/v1/sync-pipeline',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer [YOUR_CRON_SECRET_KEY]'
+    )
+  )
+  $$
+);
+```
 
 ## 4. 단계별 구현 로드맵
 
-### 1단계: Edge Function 개발 및 배포
-- [x] `supabase/functions/sync-pipeline/index.ts` 작성.
-- [x] 로컬 환경에서 `supabase functions serve`로 테스트.
+### 1단계: 설정 조회 및 표시 UI 개발
+- [x] `SystemSettings.tsx`에서 `ts_settings` 및 `ts_pipeline_logs` 실시간 연동.
+- [x] 마지막 동기화 시간 포맷팅 및 실시간 표시 로직 구현.
 
-### 2단계: Supabase 인프라 설정
-- [ ] Docker Compose 환경 변수 설정 및 컨테이너 재시작.
-- [ ] Supabase SQL Editor를 통해 `pg_cron` 등록 및 동작 확인.
+### 2단계: 주기 설정 변경 기능
+- [x] 2시간 단위(최대 12시간) 주기 선택용 `select` UI 추가.
+- [x] `ts_settings` 값을 업데이트하는 `updateSyncIntervalAction` 서버 액션 구현.
+
+### 3단계: Edge Function 보안 강화
+- [x] `CRON_SECRET_KEY` Bearer 토큰 검증 로직 추가.
+- [x] 실행 시 상세 로깅 처리.
 
 ## 5. 최종 체크리스트 (Validation)
-- [ ] 지정된 시간에 Edge Function이 호출되는가?
-- [ ] 전용 보안 키(`CRON_SECRET_KEY`)가 없을 때 호출이 차단되는가?
-- [x] 실행 로그가 DB에 정상적으로 기록되는가? (수동 실행 시 확인 완료)
+- [x] UI에서 설정한 주기가 DB(`ts_settings`)에 정상적으로 반영되는가?
+- [x] 마지막 동기화 시간이 실제 성공 기록과 일치하는가?
+- [x] Edge Function 호출 시 유효한 토큰이 없으면 401 에러를 반환하는가?
+- [x] 수동 실행 완료 후 마지막 동기화 시각이 즉시 갱신되는가?
