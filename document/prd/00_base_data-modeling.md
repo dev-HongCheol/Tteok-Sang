@@ -61,11 +61,18 @@
 | :--- | :--- | :--- | :--- |
 | id | uuid | PK, default: uuid_generate_v4() | 고유 ID |
 | started_at | timestamptz | default: now() | 실행 시작 시점 |
-| status | text | | 상태 (`success`, `failed`, `running`, `완료` 등) |
+| status | text | | 상태 (`success`, `failed`, `진행중`, `완료` 등) |
 | collected_count | int | default: 0 | 수집된 피드 수 |
 | analyzed_count | int | default: 0 | 분석 완료된 인사이트 수 |
-| error_message | text | | 에러 발생 시 상세 메시지 |
+| error_message | text | | 에러 발생 시 상세 메시지 또는 진행 상태 텍스트 |
 | created_at | timestamptz | default: now() | 로그 생성 일시 |
+
+### 2.6 ts_settings (시스템 설정)
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| :--- | :--- | :--- | :--- |
+| key | text | PRIMARY KEY | 설정 키 (예: 'sync_interval') |
+| value | text | not null | 설정 값 (Cron 표현식 등) |
+| updated_at | timestamptz | default: now() | 최종 수정 시각 |
 
 ## 3. Functions & RPCs (서버측 로직)
 
@@ -97,5 +104,7 @@
 
 ### Phase 3: 투자 인사이트 시각화 및 서비스 최적화 (진행 중)
 - [x] Finviz 스타일의 Sentiment Market Map (트리맵) 구현.
+- [x] 수동 파이프라인 제어 및 실시간 상태 시각화 다이얼로그 구현.
+- [x] 어드민 웹 UI 기반 자동 수집 주기 설정 기능 추가.
 - [ ] 전문가별/섹터별 투자 적중률 통계 대시보드 추가.
 - [ ] 사용자 구독 기반 호재/악재 실시간 알림 시스템.
