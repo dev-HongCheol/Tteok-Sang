@@ -48,3 +48,14 @@
 - [x] 이미 수집된 데이터 지점에 도달했을 때 불필요한 패칭을 멈추는가?
 - [x] 수집 완료 후 전문가의 `last_synced_at`이 정상적으로 최신화되는가?
 - [x] 중복된 `tweet_id` 삽입 시 DB 에러 없이 무시(또는 업데이트)되는가?
+
+## 6. 안정성 및 보안 전략
+
+### 6.1 Cloudflare WAF 우회 (Bypass)
+- **현상:** Vercel Server Action에서 셀프 호스팅 Supabase API 호출 시 Cloudflare의 'Managed Challenge'로 인해 요청이 차단되는 문제 발생.
+- **해결:** 서버 사이드 요청 시 `X-Vercel-Verify` 커스텀 헤더를 주입하고, Cloudflare WAF 규칙에서 해당 헤더를 감지하여 보안 검사를 건너뛰도록(Skip) 설정함.
+- **환경 변수:** `SUPABASE_WAF_SECRET`을 통해 비밀 키 관리.
+
+### 6.2 피드 수집 안정화
+- **Nitter 활용:** 트위터(X)의 직접적인 스크래핑 제약을 우회하기 위해 Nitter 인스턴스 또는 RSS 브릿지를 통한 데이터 수집을 우선함.
+- **실패 대응:** 수집 실패 시 로그를 남기고 다음 주기에서 재시도하는 로직 포함.

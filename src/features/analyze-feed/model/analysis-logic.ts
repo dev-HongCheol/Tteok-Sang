@@ -181,6 +181,12 @@ export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<Insight[]> => {
     당신은 숙련된 금융 전문가입니다. 
     제공되는 ${feeds.length}개의 텍스트를 분석하여 각각의 투자 가치를 구조화하세요.
 
+    [핵심 분석 원칙: 유저명 기반 오분류 방지]
+    - 텍스트 내에 포함된 "이름 (@유저명)" 형태의 정보는 작성자 식별을 위한 참고용일 뿐입니다.
+    - **실제 종목 매핑은 본문(Content)의 내용을 최우선으로 하세요.**
+    - 유저명에 'tesla'나 'apple' 같은 특정 종목명이 포함되어 있더라도, 본문 내용이 해당 기업의 사업, 실적, 뉴스 등과 직접적인 관련이 없다면 해당 종목으로 분류하지 마세요.
+    - 특히 공식 전문가 계정이 아닌 일반 유저의 텍스트인 경우, 유저명에 포함된 키워드에 대한 가중치를 대폭 낮추고 본문의 투자 맥락에 집중하세요.
+
     [참조: 주요 종목 리스트]
     이 리스트에 있는 종목은 반드시 리스트의 티커와 이름을 우선 사용하세요:
     ${stockReference}
@@ -191,7 +197,7 @@ export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<Insight[]> => {
     [응답 가이드라인]
     각 아이템에 대해 다음 필드를 포함한 JSON 배열을 반환하세요:
     - batch_index: 위 리스트에서 명시된 [Index: ...]의 숫자.
-    - relevance_score: 관련성 점수 (0~100).
+    - relevance_score: 관련성 점수 (0~100). 본문 내용이 유저명 키워드에만 의존하고 실제 정보가 없다면 0점에 가깝게 책정하세요.
     - importance: 'Low', 'Medium', 'High' 중 하나.
     - market_type: 'KR', 'US', 'Global' 중 하나.
     - mentioned_stocks: [{ticker: "...", name_ko: "..."}] 형식의 배열.
@@ -199,7 +205,7 @@ export const analyzeFeedsBatch = async (feeds: Feed[]): Promise<Insight[]> => {
       2. 상장사만 공식 티커를 작성하고, 비상장사는 ticker를 반드시 빈 문자열("")로 작성하세요.
       3. [참조: 주요 종목 리스트]를 확인하여 이미 알고 있는 종목은 해당 티커를 사용하세요.
       4. name_ko는 시장에서 통용되는 "표준 한글 명칭"을 사용하세요.
-      5. 언급된 종목이 없으면 [].
+      5. 본문 내용과 관계없이 유저명(@핸들)에만 종목명이 있는 경우 [].
     - is_explicit: 기업명 명시 여부.
     - sectors: [${SECTOR_LIST.join(', ')}] 중 선택하여 배열로.
     - sentiment_direction: 'Bullish', 'Bearish', 'Neutral' 중 하나.

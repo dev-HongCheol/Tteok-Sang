@@ -14,6 +14,7 @@ const publicEnvSchema = z.object({
 const serverEnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   CRON_SECRET_KEY: z.string().min(1), // 파이프라인 트리거 전용 키
+  SUPABASE_WAF_SECRET: z.string().min(1).optional(), // Cloudflare WAF 우회용 키
 });
 
 // 3. 환경에 따른 검증 로직
@@ -34,6 +35,7 @@ if (isServer) {
   const serverParsed = serverEnvSchema.safeParse({
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     CRON_SECRET_KEY: process.env.CRON_SECRET_KEY,
+    SUPABASE_WAF_SECRET: process.env.SUPABASE_WAF_SECRET,
   });
 
   if (!serverParsed.success) {
