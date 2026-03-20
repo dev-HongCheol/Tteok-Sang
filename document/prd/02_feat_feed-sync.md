@@ -53,7 +53,7 @@
 
 ### 6.1 Cloudflare WAF 우회 (Bypass)
 - **현상:** Vercel Server Action에서 셀프 호스팅 Supabase API 호출 시 Cloudflare의 'Managed Challenge'로 인해 요청이 차단되는 문제 발생.
-- **해결:** 서버 사이드 요청 시 `X-Vercel-Verify` 커스텀 헤더를 주입하고, Cloudflare WAF 규칙에서 해당 헤더를 감지하여 보안 검사를 건너뛰도록(Skip) 설정함.
+- **해결:** 서버 사이드 요청 시 `x-vercel-verify` 커스텀 헤더를 주입하고, Cloudflare WAF 규칙에서 해당 헤더를 감지하여 보안 검사를 건너뛰도록(Skip) 설정함.
 - **환경 변수:** `SUPABASE_WAF_SECRET`을 통해 비밀 키 관리.
 
 ### 6.2 피드 수집 안정화
