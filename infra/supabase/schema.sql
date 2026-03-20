@@ -1,5 +1,5 @@
 -- Tteok-Sang (떡상) Database Schema
--- Last Updated: 2026-03-13
+-- Last Updated: 2026-03-18
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -101,7 +101,7 @@ create table if not exists public.ts_settings (
 
 comment on table public.ts_settings is '시스템 전역 설정 정보';
 comment on column public.ts_settings.key is '설정 식별 키 (예: sync_interval)';
-comment on column public.ts_settings.value is '설정 값 (JSON 또는 문자열)';
+comment on column public.ts_settings.value is '설정 값 (Cron 표현식 등)';
 
 -- 6. ts_pipeline_logs (Execution history)
 create table if not exists public.ts_pipeline_logs (
@@ -250,6 +250,51 @@ begin
   delete from public.ts_stocks
   where ticker = any(target_tickers)
     and ticker != new_ticker_val;
+end;
+$$;
+
+-- [RPC] 마스터 데이터 변경 시 과거 모든 인사이트의 JSON 스냅샷을 전수 조사하여 최신 정보로 강제 동기화하는 함수
+create or replace function public.global_rebalance_insights()
+returns table (
+  processed_count int
+) 
+language plpgsql
+security definer
+as $$
+declare
+  updated_row_count int;
+begin
+  -- 이름 매칭을 통해 티커가 다르거나 검증 상태가 다른 모든 인사이트 데이터 일괄 업데이트
+  with updated_data as (
+    update public.ts_insights i
+    set mentioned_stocks = (
+      select jsonb_agg(
+        case 
+          when s.ticker is not null then 
+            jsonb_build_object(
+              'ticker', s.ticker,
+              'name_ko', s.name_ko,
+              'is_verified', s.is_verified
+            )
+          else elem
+        end
+      )
+      from jsonb_array_elements(i.mentioned_stocks) as elem
+      left join public.ts_stocks s on (s.name_ko = elem->>'name_ko' or s.aliases @> array[elem->>'name_ko'])
+    )
+    where exists (
+      -- 마스터와 정보가 다른 요소가 하나라도 있는 행만 필터링 (성능 최적화)
+      select 1 
+      from jsonb_array_elements(i.mentioned_stocks) as elem
+      join public.ts_stocks s on (s.name_ko = elem->>'name_ko' or s.aliases @> array[elem->>'name_ko'])
+      where elem->>'ticker' != s.ticker 
+         or (elem->>'is_verified')::boolean != s.is_verified
+    )
+    returning 1
+  )
+  select count(*) into updated_row_count from updated_data;
+
+  return query select updated_row_count;
 end;
 $$;
 
