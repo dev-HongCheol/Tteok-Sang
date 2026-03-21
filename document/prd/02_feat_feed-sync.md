@@ -2,18 +2,18 @@
 
 ## 1. 개요
 - **목표:** 전문가의 Nitter RSS 피드를 수집하여 `ts_feeds` 테이블에 저장하고, 중복 수집을 방지하는 증분 동기화 로직을 구현한다.
-- **주요 작업:** RSS 피드 파싱, 증분 수집 로직(재귀적 패칭), 데이터 저장(UPSERT), 전문가 동기화 시점 업데이트.
+- **주요 전략:** Vercel IP 차단 문제를 해결하기 위해 **셀프 호스팅 Supabase의 Edge Functions(Deno)**에서 수집을 수행한다.
 
 ## 2. 사용자 스토리 (시스템 관점)
-- "시스템은 전문가의 RSS URL을 호출하여 최신 트윗을 가져올 수 있어야 한다."
-- "시스템은 이미 저장된 최신 트윗보다 더 과거의 데이터를 만나면 수집을 중단해야 한다."
-- "시스템은 수집된 트윗 중 가장 최신 시점을 전문가의 `last_synced_at`에 기록해야 한다."
+- "시스템은 Vercel 서버가 아닌, 자체 서버 IP를 가진 Supabase Edge Function을 통해 RSS 피드를 수집해야 한다."
+- "시스템은 수집 성공률을 높이기 위해 RSS 호출 실패 시 즉시 다른 가용 인스턴스로 폴백(Fallback)해야 한다."
 
 ## 3. 기술적 상세 및 요구사항
 
-### 3.1 외부 라이브러리
-- **RSS Parser:** `rss-parser` (XML 데이터를 JSON으로 변환)
-- **HTTP Client:** Axios (이미 설치됨)
+### 3.1 외부 라이브러리 및 환경
+- **Supabase Edge Functions:** Deno 기반 서버리스 환경 (자체 서버 IP 활용)
+- **RSS Parser:** `rss-parser` (Deno 호환 방식 또는 단순 정규식/XML 파서 활용)
+- **HTTP Client:** Deno 내장 `fetch`
 
 ### 3.2 수집 로직 (Incremental Fetching)
 1.  **준비:** 전문가의 `twitter_handle`과 `last_synced_at` 정보를 DB에서 가져온다.
@@ -51,11 +51,10 @@
 
 ## 6. 안정성 및 보안 전략
 
-### 6.1 Cloudflare WAF 우회 (Bypass)
-- **현상:** Vercel Server Action에서 셀프 호스팅 Supabase API 호출 시 Cloudflare의 'Managed Challenge'로 인해 요청이 차단되는 문제 발생.
-- **해결:** 서버 사이드 요청 시 `x-vercel-verify` 커스텀 헤더를 주입하고, Cloudflare WAF 규칙에서 해당 헤더를 감지하여 보안 검사를 건너뛰도록(Skip) 설정함.
-- **환경 변수:** `SUPABASE_WAF_SECRET`을 통해 비밀 키 관리.
+### 6.1 Vercel IP 차단 우회 (Bypass Vercel Block)
+- **현상:** Vercel(AWS IP)에서 Nitter/XCancel 호출 시 `socket hang up` 발생.
+- **해결:** 모든 RSS 수집 및 파싱 로직을 Supabase Edge Functions로 이관. 셀프 호스팅 환경의 독립된 IP를 사용하여 수집 성공률 확보.
 
-### 6.2 피드 수집 안정화
-- **Nitter 활용:** 트위터(X)의 직접적인 스크래핑 제약을 우회하기 위해 Nitter 인스턴스 또는 RSS 브릿지를 통한 데이터 수집을 우선함.
-- **실패 대응:** 수집 실패 시 로그를 남기고 다음 주기에서 재시도하는 로직 포함.
+### 6.2 리소스 최적화
+- **경량화:** 무거운 RSSHub(Docker) 대신 가벼운 Edge Function(Deno)으로 구현하여 RAM/CPU 리소스 최소화.
+- **실패 대응:** 특정 인스턴스 실패 시 로그를 남기고 즉시 다음 대안 인스턴스로 전환하는 순회(Iteration) 로직 포함.
