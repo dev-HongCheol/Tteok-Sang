@@ -19,7 +19,18 @@
     - `ts_pipeline_logs`에서 가장 최근 '완료'된 기록의 시각을 '마지막 동기화' 정보로 노출한다.
 - **트리거 보안**: Edge Function은 `CRON_SECRET_KEY`를 Bearer 토큰으로 검증하여 허가된 호출만 허용한다.
 
-### 3.2 pg_cron 설정 예시 (SQL)
+### 3.2 pg_cron 익스텐션 활성화 확인 (Pre-requisite)
+크론 작업을 등록하기 전, 데이터베이스에 `pg_cron` 익스텐션이 설치 및 활성화되어 있는지 반드시 확인해야 한다.
+
+```sql
+-- 1. 익스텐션 생성 (이미 생성되어 있다면 무시됨)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- 2. 스키마 존재 여부 확인 (에러 발생 시 활성화되지 않은 상태임)
+SELECT * FROM cron.job;
+```
+
+### 3.3 pg_cron 설정 예시 (SQL)
 ```sql
 -- 설정된 주기에 따라 실행되는 태스크 등록
 -- pg_cron이 ts_settings 테이블의 값을 실시간으로 참조하게 하려면 동적 SQL 또는 별도의 업데이트 트리거가 필요함.
