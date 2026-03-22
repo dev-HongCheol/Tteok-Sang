@@ -6,7 +6,7 @@
 
 ## 🛠️ 프로젝트 정보 및 기술 스택
 
-- **Deployment URL:** [https://tteok-sang.devhong.cc](https://tteok-sang.devhong.cc)
+- **Deployment URL:** [https://tteok-sang.vercel.app](https://tteok-sang.vercel.app)
 - **Framework:** Next.js (Latest, App Router)
 - **Language:** TypeScript
 - **Package Manager:** `pnpm`

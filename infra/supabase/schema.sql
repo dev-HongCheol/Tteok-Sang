@@ -1,5 +1,5 @@
 -- Tteok-Sang (떡상) Database Schema
--- Last Updated: 2026-03-18
+-- Last Updated: 2026-03-22
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -120,7 +120,51 @@ comment on column public.ts_pipeline_logs.status is '실행 결과 상태 (완�
 comment on column public.ts_pipeline_logs.collected_count is '해당 실행 회차에서 수집된 신규 피드 수';
 comment on column public.ts_pipeline_logs.analyzed_count is '해당 실행 회차에서 분석 완료된 인사이트 수';
 
--- 7. Functions & RPCs
+-- 7. Automation & Cron Scheduler
+-- Enable pg_cron extension
+create extension if not exists pg_cron;
+
+-- [Function] ts_settings의 sync_interval 변경 시 pg_cron 스케줄을 자동으로 갱신하는 함수
+create or replace function public.sync_cron_schedule_from_settings()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  -- sync_interval 키에 대해서만 동작
+  if new.key != 'sync_interval' then
+    return new;
+  end if;
+
+  -- 기존 태스크가 있다면 삭제 (실패해도 무시)
+  begin
+    perform cron.unschedule('sync-pipeline-task');
+  exception when others then
+    null;
+  end;
+
+  -- 새 스케줄 등록 (Edge Function 호출)
+  perform cron.schedule(
+    'sync-pipeline-task',
+    new.value,
+    format(
+      'select net.http_post(url := ''https://supa.devhong.cc/functions/v1/sync-pipeline'', headers := ''{"Content-Type": "application/json"}''::jsonb)',
+      ''
+    )
+  );
+
+  return new;
+end;
+$$;
+
+-- [Trigger] ts_settings 변경 시 크론 스케줄러 자동 갱신
+drop trigger if exists tr_sync_cron_schedule on public.ts_settings;
+create trigger tr_sync_cron_schedule
+after insert or update on public.ts_settings
+for each row
+execute function public.sync_cron_schedule_from_settings();
+
+-- 8. Functions & RPCs
 
 -- [RPC] 특정 기간 동안의 종목별 센티먼트 집계 함수 (런타임 정규화 적용)
 create or replace function public.get_stock_sentiment_ranking(
