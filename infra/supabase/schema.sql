@@ -196,7 +196,6 @@ security definer
 as $$
 declare
   target_tickers text[];
-  total_mentions int;
   current_aliases text[];
 begin
   -- 1. 목표 종목의 현재 별칭 리스트 가져오기
@@ -204,12 +203,9 @@ begin
   from public.ts_stocks
   where ticker = new_ticker_val;
 
-  -- 2. 병합 대상 티커 리스트 및 언급 횟수 합계 추출
-  -- (수정 전 티커 + 이름 일치 + 별칭에 포함된 미검증 종목들 일괄 수집)
-  select 
-    array_agg(ticker), 
-    sum(coalesce(mention_count, 0))
-  into target_tickers, total_mentions
+  -- 2. 병합 대상 티커 리스트 추출 (언급 횟수는 합산하지 않고 나중에 전수 재계산)
+  select array_agg(ticker)
+  into target_tickers
   from public.ts_stocks
   where (ticker = old_ticker_val)
      or (ticker = new_ticker_val)
@@ -241,15 +237,20 @@ begin
     where s->>'ticker' = any(target_tickers)
   );
 
-  -- 4. 언급 횟수 합산 반영 (승인 처리는 호출 측에서 직접 제어하도록 분리)
-  update public.ts_stocks
-  set mention_count = total_mentions
-  where ticker = new_ticker_val;
-
-  -- 5. 흡수된 나머지 임시 레코드들 삭제
+  -- 4. 흡수된 나머지 임시 레코드들 삭제
   delete from public.ts_stocks
   where ticker = any(target_tickers)
     and ticker != new_ticker_val;
+
+  -- 5. 언급 횟수 실제 데이터 기반 전수 재계산 (폭증 방지 및 정확도 확보)
+  update public.ts_stocks s
+  set mention_count = (
+    select count(*)
+    from public.ts_insights i,
+         jsonb_array_elements(i.mentioned_stocks) as stock
+    where stock->>'ticker' = s.ticker
+  )
+  where s.ticker = new_ticker_val;
 end;
 $$;
 
@@ -280,7 +281,13 @@ begin
         end
       )
       from jsonb_array_elements(i.mentioned_stocks) as elem
-      left join public.ts_stocks s on (s.name_ko = elem->>'name_ko' or s.aliases @> array[elem->>'name_ko'])
+      -- [핵심 수정] 동일 이름이 여러개일 경우 '검증된 것' 우선으로 딱 하나만 매칭 (카테시안 곱 방지)
+      left join lateral (
+        select * from public.ts_stocks 
+        where (name_ko = elem->>'name_ko' or aliases @> array[elem->>'name_ko'])
+        order by is_verified desc, created_at desc
+        limit 1
+      ) s on true
     )
     where exists (
       -- 마스터와 정보가 다른 요소가 하나라도 있는 행만 필터링 (성능 최적화)

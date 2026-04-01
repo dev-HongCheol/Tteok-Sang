@@ -85,13 +85,15 @@ export function StockDialog({ stock, open, onOpenChange }: StockDialogProps) {
 
   /**
    * 폼 제출 핸들러
-   * 문자열로 입력된 별칭을 배열로 변환하여 처리합니다.
+   * 문자열로 입력된 별칭을 배열로 변환하고 중복을 제거하여 처리합니다.
    */
   const onSubmit = (formData: any) => {
     const { aliases_str, ...rest } = formData
     const data: Partial<Stock> = {
       ...rest,
-      aliases: aliases_str ? aliases_str.split(',').map((s: string) => s.trim()).filter(Boolean) : []
+      aliases: aliases_str 
+        ? Array.from(new Set(aliases_str.split(',').map((s: string) => s.trim()).filter(Boolean)))
+        : []
     }
     saveMutation.mutate(data)
   }

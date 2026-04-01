@@ -47,9 +47,16 @@ export const updateStock = async (ticker: string, updates: Partial<Stock>): Prom
 
   if (error) throw new Error(`종목 수정 실패: ${error.message}`);
 
-  // 2. 전수 데이터 정규화 실행 (Global Rebalance)
-  // 티커, 이름, 또는 별칭이 변경된 경우 과거의 모든 인사이트 JSON 스냅샷을 마스터 기준으로 강제 동기화합니다.
+  // 2. 이름/별칭 기반 병합 및 정규화 실행
   if (updates.ticker || updates.name_ko || updates.aliases) {
+    // 중복 종목 흡수 및 데이터 소급 동기화
+    await supabase.rpc('sync_stock_normalization', {
+      old_ticker_val: ticker,
+      new_ticker_val: updates.ticker || ticker,
+      new_name_ko_val: updates.name_ko || data.name_ko
+    });
+    
+    // 전체 인사이트 전수 조사 및 최신화
     await supabase.rpc('global_rebalance_insights');
   }
 
@@ -69,7 +76,13 @@ export const verifyStock = async (ticker: string, updates: Partial<Stock>): Prom
 
   if (error) throw new Error(`종목 검증 실패: ${error.message}`);
 
-  // 승인 시에도 전수 정규화를 실행하여 'is_verified' 상태를 모든 과거 데이터에 전파합니다.
+  // 승인 시에도 병합 로직을 실행하여 이름이 겹치는 미검증 데이터를 흡수합니다.
+  await supabase.rpc('sync_stock_normalization', {
+    old_ticker_val: ticker,
+    new_ticker_val: updates.ticker || ticker,
+    new_name_ko_val: updates.name_ko || data.name_ko
+  });
+
   await supabase.rpc('global_rebalance_insights');
 
   return data;
