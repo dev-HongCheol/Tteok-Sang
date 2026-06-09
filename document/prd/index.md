@@ -31,6 +31,7 @@
 | `02_feat_ai-batch-pipeline.md` | Gemini API 배치 분석 및 Zod 파싱 | `Gemini`, `Batch`, `Zod` |
 | `02_feat_main-feed-ui.md` | 메인 피드 UI 및 통합 필터링 | `UI`, `Filter`, `Dark Mode` |
 | `02_feat_expert-admin.md` | 전문가 정보 CRUD 관리 | `Admin`, `Expert` |
+| `02_feat_global-briefing.md` | 글로벌 경제 브리핑 및 텔레그램 연동 | `Briefing`, `Telegram`, `News` |
 
 ### 3. 통합 및 워크플로우 (Flow)
 | 파일명 | 설명 | 핵심 키워드 |

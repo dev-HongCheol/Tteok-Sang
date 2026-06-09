@@ -74,6 +74,22 @@
 | value | text | not null | 설정 값 (Cron 표현식 등) |
 | updated_at | timestamptz | default: now() | 최종 수정 시각 |
 
+### 2.7 ts_global_news (글로벌 거시경제 및 매크로 뉴스)
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+| :--- | :--- | :--- | :--- |
+| id | uuid | PK, default: uuid_generate_v4() | 고유 ID |
+| title | text | not null | 영문 원본 기사 제목 |
+| link | text | not null, unique | 원문 링크 (중복 수집 방지 식별자) |
+| published_at | timestamptz | not null | 원문 기사 발행 일시 |
+| status | text | check (Pass, Hold, Drop) | 1차 필터링 상태 |
+| category | text | | AI가 분류한 카테고리 (거시경제, 기업, 섹터, 지정학 등) |
+| target_keywords | text[] | | AI가 추출한 관련 핵심 키워드 (한글) |
+| summary | text | | AI가 한국어로 번역/요약한 본문 (3~4줄 인사이트) |
+| importance | int | check (1-10) | 시장 영향 중요도 점수 |
+| sentiment | text | check (Bullish, Bearish, Neutral) | 투자 방향성 (호재/악재/중립) |
+| is_notified | boolean | default: false | 텔레그램 실시간 알림 발송 완료 여부 |
+| created_at | timestamptz | default: now() | DB 수집 및 처리 일시 |
+
 ## 3. Functions & RPCs (서버측 로직)
 
 ### 3.1 get_stock_sentiment_ranking (종목별 센티먼트 집계)
@@ -112,3 +128,4 @@
 - [x] 어드민 웹 UI 기반 자동 수집 주기 설정 기능 추가.
 - [ ] 전문가별/섹터별 투자 적중률 통계 대시보드 추가.
 - [ ] 사용자 구독 기반 호재/악재 실시간 알림 시스템.
+- [ ] **[신규] 글로벌 경제 브리핑 (Axios 단일 소스 2-Step AI 분석 및 텔레그램 연동)**
